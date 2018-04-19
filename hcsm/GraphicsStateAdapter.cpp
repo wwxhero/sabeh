@@ -670,7 +670,7 @@ CGraphicsStateAdapter::SetMovingObjectStates(
 			}
 		}
 	}
-	switch( cved.GetObjType(cvedId, true) )
+	switch( cved.GetObjType(cvedId) )
 	{
 	case eCV_TRAJ_FOLLOWER :
 		categoryName = cved.GetSol().GetObj( cved.GetObjSolId(cvedId) )->GetCategoryName();
