@@ -1,0 +1,53 @@
+STATE_MACHINE TrafficManager {
+	CREATE_CB       TrafficManagerCreate
+	DELETE_CB       TrafficManagerDelete
+	PRE_ACTIVITY    TrafficManagerPreActivity
+	POST_ACTIVITY   TrafficManagerPostActivity
+	PRIV_DECL       void UserCreation( const CTrafMngrParseBlock* );
+	PRIV_DECL       void UserActivity( const CTrafMngrParseBlock* );
+	PRIV_DECL       void UserDeletion( const CTrafMngrParseBlock* );
+
+	BUTTONS			(MakeTraffic, Make_traffic)
+	DIALS			(InputSet, string, Input_Set)
+
+	PRIV_DECL		void GetOwnVehRoadPos();
+	PRIV_DECL		void MaintainPath();
+	PRIV_DECL		void MaintainPathDist( const double cPathPrependDist, const double cPathAppendDist );
+	PRIV_DECL		void CreateObjects( vector<TTmCreationPoint>& creationPoints, const string& solName );
+	PRIV_DECL		void DeleteObjects();
+	PRIV_DECL       void CountObjectsCreatedByTM( vector<TTmObj>& tmObjs );
+	PRIV_DECL       void LimitOverload(	vector<TTmObj>& tmObjs,	int desKill );
+	PRIV_DECL       int KillTmObjs( vector<TTmObj>& tmObjs, int numToKill, bool killBehindOnly, const double cDistToKill );
+	PRIV_DECL       int KillTmObjsDist( vector<TTmObj>& tmObjs, const double cAheadDist, const double cBehindDist );
+	PRIV_DECL       void FindCreationPoints( vector<TTmCreationPoint>& creationPoints,	const double& cMaxDensity, double ownVehVel	);
+	PRIV_DECL		void FindCreationPointsOnHighway( vector<TTmCreationPoint>&, const double&, double ownVehVel );
+	PRIV_DECL		vector<CTrafMngrParseBlock::TInputSet> m_inputSets;
+	PRIV_DECL		vector<CTrafMngrParseBlock::TInputSet>::const_iterator m_cInputSetItr;
+	PRIV_DECL		double m_distAtAppending;
+	PRIV_DECL		double m_timeAtObjCreation;
+	PRIV_DECL		CRoadPos m_roadPos;
+	PRIV_DECL       CPath*  m_pPath;
+	PRIV_DECL       int m_rndStreamId;
+	PRIV_DECL		vector<int> m_objsByTM;
+	PRIV_DECL		int m_creationCounter;	
+}
+
+CREATE_CB TrafficManagerCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB TrafficManagerDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION TrafficManagerPreActivity
+CODE
+	UserActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION TrafficManagerPostActivity
+CODE
+	pSnoBlock;
+&&&&ENDCODE

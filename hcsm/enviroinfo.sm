@@ -1,0 +1,31 @@
+STATE_MACHINE EnviroInfo {
+	CREATE_CB       EnviroInfoCreate
+	DELETE_CB       EnviroInfoDelete
+	PRE_ACTIVITY    EnviroInfoPreActivity
+	POST_ACTIVITY   EnviroInfoPostActivity
+	PRIV_DECL       void UserCreation( const CEnviroInfoParseBlock* );
+	PRIV_DECL       void UserPreActivity( const CEnviroInfoParseBlock* );
+	PRIV_DECL       void UserPostActivity( const CEnviroInfoParseBlock* );
+	PRIV_DECL       void UserDeletion( const CEnviroInfoParseBlock* );
+
+}
+
+CREATE_CB EnviroInfoCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB EnviroInfoDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION EnviroInfoPreActivity
+CODE
+	UserPreActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION EnviroInfoPostActivity
+CODE
+	UserPostActivity( pSnoBlock );
+&&&&ENDCODE

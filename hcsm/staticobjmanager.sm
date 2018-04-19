@@ -1,0 +1,38 @@
+STATE_MACHINE StaticObjManager {
+	CREATE_CB       StaticObjManagerCreate
+	DELETE_CB       StaticObjManagerDelete
+	POST_ACTIVITY   StaticObjManagerPostActivity
+	DIALS           (SetOption1, string, Set_Option_1)
+	DIALS           (SetOption2, string, Set_Option_2)
+	DIALS			(AudioState, string, int)
+	DIALS			(VisualState, string, int)
+	DIALS			(AnimationState, string, int)
+	
+	DIAL_INFO       (SetOption1, 0, Name, string, none, name, name_of_object)
+	DIAL_INFO       (SetOption1, 0, Option, int, none, Object, option_number)
+	
+	DIAL_INFO       (SetOption2, 0, Name, string, none, name, name_of_object)
+	DIAL_INFO       (SetOption2, 0, Option, int, none, Object, option_number)
+	
+	PRIV_DECL		void Creation( const CSobjMngrParseBlock* );
+	PRIV_DECL		void Deletion( const CSobjMngrParseBlock* );
+	PRIV_DECL       void PostActivity( const CSobjMngrParseBlock* );
+	PRIV_DECL       bool SetObjectOptions( const string& name, int *pValues );
+	PRIV_DECL       bool SetObjectAudioState( const string& name, short val );
+	PRIV_DECL       bool SetObjectVisualState( const string& name, short val );
+}
+
+CREATE_CB StaticObjManagerCreate
+CODE
+	Creation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB StaticObjManagerDelete
+CODE
+	Deletion( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION StaticObjManagerPostActivity
+CODE
+	PostActivity( pSnoBlock );
+&&&&ENDCODE

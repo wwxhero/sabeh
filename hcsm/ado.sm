@@ -1,0 +1,745 @@
+STATE_MACHINE Ado {
+	CHILDREN        Autonomous, RemoteControl
+	TRANSITIONS     (Autonomous, RemoteControl, AdoAutoRemotePredicate)
+	TRANSITIONS     (RemoteControl, Autonomous, AdoRemoteAutoPredicate)
+	CREATE_CB       AdoCreate
+	DELETE_CB       AdoDelete
+	PRE_ACTIVITY    AdoPreActivity
+	POST_ACTIVITY   AdoPostActivity
+	BUTTONS         (ChangeLaneLeft, Change_lane_left)
+	BUTTONS			(ChangeLaneRight, Change_lane_right)
+	BUTTONS         (TurnLeft, Turn_left)
+	BUTTONS			(TurnRight, Turn_right)
+    BUTTONS			(ProjectAndResetLaneOffset, Project_and_reset_lane_offset)
+	DIALS           (AudioState, string)
+	DIALS			(ForcedLaneOffset, string, Forced_Lane_Offset)
+	DIALS           (ForcedVelocity, string, Forced_Velocity)
+	DIALS           (ImStop, double, private)
+	DIALS           (InhibitLaneChange, double, Inhibit_optional_lane_change_behavior)
+	DIALS           (LaneChange, string, Lane_Change)
+	DIALS           (LaneChangeStatus, string, Lane_Change_Status)
+	DIALS           (MaintainGap, string, Maintain_Gap)
+	DIALS           (TargetVelocity, string, Change_Target_Velocity)
+	DIALS			(VisualState, string, Change_Light_State)
+
+	DIAL_INFO       (AudioState, 0, AudioState, int, Audio_bits, 16, The_audio_sound_to_generate)
+	DIAL_INFO       (AudioState, 1, Duration, int, seconds, 2, How_long_to_generate_audio)
+	
+	DIAL_INFO       (ForcedLaneOffset, 0, LaneOffset,    double, feet,        1,  Offset_from_lane_center)
+	DIAL_INFO       (ForcedLaneOffset, 1, Urgency,       double, none,        1,  Urgency_between_0_and_1)
+	DIAL_INFO       (ForcedLaneOffset, 1, Delay,         double, frames,      10, start_delay)
+	DIAL_INFO       (ForcedLaneOffset, 1, MaxSteer,      double, deg_per_sec, 129,max_steer_rate)
+	DIAL_INFO       (ForcedLaneOffset, 1, MaxSteerOffset,double, feet,        9,  max_offset_rate)
+	DIAL_INFO       (ForcedLaneOffset, 1, MaxSteerForce, double, feet,        3,  max_force)
+	DIAL_INFO       (ForcedLaneOffset, 1, FinishDistance,double, inches,      1,  tolerance)
+	
+	DIAL_INFO       (InhibitLaneChange, 0, Duration, double, seconds, 1, No_lane_change_for_this_duration)
+	DIAL_INFO       (LaneChange, 0, Direction, string, direction, right, Direction_of_lane_change)
+	DIAL_INFO       (LaneChange, 0, Urgency, double, none, 1, Urgency_between_0_and_1)
+	DIAL_INFO       (LaneChange, 0, TurnSignalDuration, double, seconds, 2, How_long_to_signal_before_lane_change)
+
+	DIAL_INFO       (MaintainGap, 0, ObjName, string, none, ExternalDriver, Name_of_object_maintain_gap_from)
+	DIAL_INFO       (MaintainGap, 0, Type, string, none, d, d_is_for_distance_and_t_is_for_time)
+	DIAL_INFO       (MaintainGap, 0, Value, double, feet_or_seconds, -120, Associated_with_mode)
+	DIAL_INFO       (MaintainGap, 0, MaxSpeed, double, mph, 100, Maximum_velocity)
+	DIAL_INFO       (MaintainGap, 0, MinSpeed, double, mph, 20, Minimum_velocity)
+	DIAL_INFO       (MaintainGap, 0, DistKp, double, none, 4, Distance_gain)
+	DIAL_INFO       (MaintainGap, 0, VelKp, double, none, 4, Velocity_gain)
+	DIAL_INFO       (MaintainGap, 0, MaxAccel, double, ms2, 2, Maximum_acceleration)
+	DIAL_INFO       (MaintainGap, 0, MaxDecel, double, ms2, -2, Maximum_deceleration)
+	DIAL_INFO       (MaintainGap, 0, PercentAroundTarget, double, percent, -1, Percentage_inside_target_value)
+	DIAL_INFO       (MaintainGap, 0, TimeAroundTarget, double, seconds, -1, Time_to_spend_inside_target_range_before_reset)
+	DIAL_INFO       (MaintainGap, 0, DisableSpeed, double, mph, -1, Reset_when_below_this_speed)
+	DIAL_INFO       (MaintainGap, 0, DisableTime, double, seconds, -1, Reset_when_this_time_expired)
+
+	DIAL_INFO       (VisualState, 0, LightState, int, bits, 16, The_state_of_the_light)
+	DIAL_INFO       (VisualState, 1, Duration, int, seconds, 2, How_long_to_keep_light_state)
+
+	DIAL_INFO       (TargetVelocity, 0, Speed, double, MPH, 30, The_Target_Speed)
+	DIAL_INFO       (TargetVelocity, 1, Duration, int, seconds, 2, How_long_to_keep_target_Velocity)
+	
+	DIAL_INFO       (LaneChangeStatus, 0, Status, int, Satus, 0, lane_change_allowed)
+	DIAL_INFO       (LaneChangeStatus, 1, Duration, int, seconds, 2, How_long_to_keep_this_condition)	
+	
+	MONITOR         (RoadPos, CRoadPos)
+	MONITOR         (TargCrdr, CCrdr)
+	MONITOR         (StoppedBehindObj, int)
+	MONITOR         (HasStopSignTarget, bool)
+	MONITOR         (ImTargCrdrs, string)
+	MONITOR         (StoppedAtStopSignFrame, int)
+
+	PRIV_DECL       void UserCreation( const CAdoParseBlock* );
+	PRIV_DECL       void UserPreActivity( const CAdoParseBlock* );
+	PRIV_DECL       void UserPostActivity( const CAdoParseBlock* );
+	PRIV_DECL       void UserDeletion( const CAdoParseBlock* );
+
+	PRIV_DECL       CObjectInitCond m_initConditions;
+	PRIV_DECL       CAdoInfoPtr m_pI;
+	PRIV_DECL       CCrdr m_crdr;
+	PRIV_DECL		double GetObjDistPow2( int argC, const CExprParser::CStrNum args[] );
+	PRIV_DECL		double GetObjVel( int argC, const CExprParser::CStrNum args[] );
+    PRIV_DECL		double MySin( int argC, const CExprParser::CStrNum args[] );
+    PRIV_DECL		double FadeIn( int argC, const CExprParser::CStrNum args[] );
+    PRIV_DECL		double FadeOut( int argC, const CExprParser::CStrNum args[] );
+    PRIV_DECL		double GetOvVel( int argC, const CExprParser::CStrNum args[] );
+    PRIV_DECL		double ReadCell( int argC, const CExprParser::CStrNum args[] );
+    PRIV_DECL		double ReadVar( int argC, const CExprParser::CStrNum args[] );
+    PRIV_DECL		double GetObjAccel( int argC, const CExprParser::CStrNum args[] );
+    PRIV_DECL		double MySinGap( int argC, const CExprParser::CStrNum args[] );
+    PRIV_DECL		double FadeInGap( int argC, const CExprParser::CStrNum args[] );
+    PRIV_DECL		double FadeOutGap( int argC, const CExprParser::CStrNum args[] );
+	PRIV_DECL       void DumpSnoBlock( const CAdoParseBlock* );
+	PRIV_DECL       bool CreateCvedObject( const CAdoParseBlock* );
+	PRIV_DECL       CRoadPos GetRoadposForRelCreate( const CAdoParseBlock* cpSnoBlock);
+	PRIV_DECL       void Activated( const CAdoParseBlock* );
+	PRIV_DECL       CAdoInfo::ERunMode GetRunMode( const string& );
+	PRIV_DECL       EDynaFidelity GetDynModel( const string& );
+	PRIV_DECL       void PreActivityProcessButtonsAndDials( const double& cInitVel );
+	PRIV_DECL       void PostActivityProcessButtonsAndDials();
+	PRIV_DECL       void ParseTargetVelocityDial();
+	PRIV_DECL       void ParseMaintainGapDial();
+	PRIV_DECL       void ParseLaneChangeDial();
+	PRIV_DECL       void ParseLaneChangeStatusDial();
+	PRIV_DECL       void ParseAudioStateDial();
+	PRIV_DECL       void ParseVisualStateDial();
+	PRIV_DECL		void ParseForcedLaneOffset();
+	PRIV_DECL       bool ParseForcedVelocityDial( const double &cv, double& targVel, bool& haveAccel, double& targAccel );
+	PRIV_DECL       void ClearTurnSignals();
+	PRIV_DECL       void SetTurnSignals();
+	PRIV_DECL       void ComputeIntersectionTurnSignal();
+	PRIV_DECL       void BuildPath( const CLane& );
+	PRIV_DECL       void InitializeDynamicsVars( const CSolObj*, CVehicleObj* );
+	PRIV_DECL       void DisplayDebugInfo();
+	PRIV_DECL       FILE* m_debugFile;
+	PRIV_DECL       double m_currForcedLaneOffset;   // current offset
+	PRIV_DECL       double m_currForcedLaneOffsetUrgency;   // current offset Urgency (default .5)
+	PRIV_DECL       double m_prevForcedLaneDialVal;  // previous dial setting
+	PRIV_DECL		CExpEvalAdo m_exprEval; //<Forced Vel Expr Parser
+	PRIV_DECL		CExpEvalAdo m_exprGapDisEvtal; //< Gap Distatnce Expr Parser
+	PRIV_DECL		CExpEvalAdo m_exprMinSpeedEvtal; //< Gap Distatnce Expr Parser
+	PRIV_DECL		CExpEvalAdo m_exprMaxSpeedEvtal; //< Gap Distatnce Expr Parser	
+	PRIV_DECL		CExpEvalAdo m_exprMaxAccelEvtal; //< Gap Distatnce Expr Parser
+	PRIV_DECL		CExpEvalAdo m_exprMinAccelEvtal; //< Gap Distatnce Expr Parser
+}
+
+CREATE_CB AdoCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB AdoDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION AdoPreActivity
+CODE
+	UserPreActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION AdoPostActivity
+CODE
+	UserPostActivity( pSnoBlock );
+&&&&ENDCODE
+
+PREDICATE_FUNCTION AdoAutoRemotePredicate
+CODE
+	return AutoRemotePredicate();
+&&&&ENDCODE 
+
+PREDICATE_FUNCTION AdoRemoteAutoPredicate
+CODE
+	return RemoteAutoPredicate();
+&&&&ENDCODE 
+
+
+
+STATE_MACHINE Autonomous {
+	PRE_ACTIVITY    AutonomousPreActivity
+	POST_ACTIVITY   AutonomousPostActivity
+	INPUTS          (pI, CAdoInfoPtr)
+
+	PRIV_DECL       void AutonomousPreActivity();
+	PRIV_DECL       void AutonomousPostActivity();
+	PRIV_DECL       bool AutoRemotePredicate();
+}
+
+PRE_ACTIVITY_FUNCTION AutonomousPreActivity
+CODE
+	AutonomousPreActivity();
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION AutonomousPostActivity
+CODE
+	AutonomousPostActivity();
+&&&&ENDCODE
+
+
+
+STATE_MACHINE RemoteControl {
+	PRE_ACTIVITY    RemoteControlPreActivity
+	POST_ACTIVITY   RemoteControlPostActivity
+	CHILDREN        FreeDrive, Follow, LaneChange, NavigateIntrsctn, Merge
+	INPUTS          (pI, CAdoInfoPtr)
+	OUTPUTS         (TargPos, CPoint3D)
+	OUTPUTS         (TargSteer, double), (TargAccel, double)
+	OUTPUTS         (ImTargCrdrs, string)
+	OUTPUTS         (HasStopSignTarget, bool)
+	OUTPUTS         (StoppedAtStopSignFrame, int)
+	OUTPUTS         (MaxSteer, double)
+
+	PRIV_DECL       void RemoteControlPreActivity();
+	PRIV_DECL       void RemoteControlPostActivity();
+	PRIV_DECL       bool RemoteAutoPredicate();
+}
+
+PRE_ACTIVITY_FUNCTION RemoteControlPreActivity
+CODE
+	RemoteControlPreActivity();
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION RemoteControlPostActivity
+CODE
+	RemoteControlPostActivity();
+&&&&ENDCODE
+
+
+
+STATE_MACHINE FreeDrive {
+	CREATE_CB       FreeDriveCreate
+	PRE_ACTIVITY    FreeDrivePreActivity
+	POST_ACTIVITY   FreeDrivePostActivity
+	INPUTS          (pI, CAdoInfoPtr)
+	OUTPUTS         (TargPos, CPoint3D), (TargVel, double)
+	OUTPUTS         (TargSteer, double), (TargAccel, double)
+	OUTPUTS         (MaxSteer, double)
+	PRIV_DECL       void Creation();
+	PRIV_DECL       void PreActivity();
+	PRIV_DECL       void PostActivity();
+	PRIV_DECL       double GetSpeedLimit( const CRoadPos& );
+	PRIV_DECL       CRoadPos m_targDistRoadPos;
+	PRIV_DECL       double m_prevTargAccel;
+	PRIV_DECL       double ComputeOffRoadDistForTargPos( CAdoInfoPtr pI );
+	PRIV_DECL       void GetSpeedLimitTargAccel( CAdoInfoPtr pI, double& targAccel, double& targVel );
+	PRIV_DECL       void GetMaintainGapTargAccel( CAdoInfoPtr pI, double& targAccel, double& targVel );
+	PRIV_DECL       bool GetCurvatureTargAccel( CAdoInfoPtr pI, double& targAccel, double& targVel );
+	PRIV_DECL       void AdjustTargRoadPosForCurves( CAdoInfoPtr pI, CRoadPos& targRoadPos );
+	PRIV_DECL       void AdjustTargRoadPosForForcedOffset( CAdoInfoPtr pI, CRoadPos& targRoadPos, double &MaxSteerRateAdjustment );
+	PRIV_DECL       void AdjustTargRoadPosForLaneDevVariance( CAdoInfoPtr pI, CRoadPos& targRoadPos );
+	PRIV_DECL       CVehDynCommand::TVehDynCommand m_command;
+	PRIV_DECL       bool m_listeningToCurvature;
+	PRIV_DECL       int m_waitTimeFrame;
+	PRIV_DECL       long m_laneOffsetPrevFrame;
+	PRIV_DECL       double m_laneOffsetPrev;
+	PRIV_DECL       CVector3D m_curveOffsetPrev;
+	PRIV_DECL       long m_currFollEngTime;
+	PRIV_DECL       double m_initFollDist;
+	PRIV_DECL       int  m_lastMaintainGapId;
+	PRIV_DECL       double m_maintainGapPrevActualDist;
+	PRIV_DECL       TFollowParams m_mgParams;
+	PRIV_DECL       int m_maintainGapDurationCounter;
+	PRIV_DECL       int m_maintainGapCounter;
+	PRIV_DECL       double m_prevDistToCurv;
+	PRIV_DECL       long m_refreshSpeedRandomizationFrame;
+	PRIV_DECL       double m_speedRandomization;
+	PRIV_DECL       double RandomizeVelocity( CAdoInfoPtr pI, const double, int );
+}
+
+CREATE_CB FreeDriveCreate
+CODE
+	Creation();
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION FreeDrivePreActivity
+CODE
+	PreActivity();
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION FreeDrivePostActivity
+CODE
+	PostActivity();
+&&&&ENDCODE
+
+
+STATE_MACHINE Follow {
+	CREATE_CB       FollowCreate
+	PRE_ACTIVITY    FollowPreActivity
+	POST_ACTIVITY   FollowPostActivity
+	INPUTS          (pI, CAdoInfoPtr)
+	OUTPUTS         (TargAccel, double)
+
+	PRIV_DECL       void Creation();
+	PRIV_DECL       void PreActivity();
+	PRIV_DECL       void PostActivity();
+
+	PRIV_DECL       int m_ownVehicleRefreshFrame;
+	PRIV_DECL       CRoadPos m_ownVehicleRoadPos;
+
+	PRIV_DECL       double m_followRandomization;
+	PRIV_DECL       long m_currFollEngTime;
+	PRIV_DECL       double m_initFollDist;
+	PRIV_DECL       int  m_lastLeadId;
+	PRIV_DECL       double m_prevFollowActualDist;
+	PRIV_DECL       bool GetLeadObjectId( CAdoInfoPtr, const vector<int>& , int& );
+	PRIV_DECL       double ComputeDistToOwnVehicle( CAdoInfoPtr, const CDynObj* );
+	PRIV_DECL       double ComputeFollowDist( CAdoInfoPtr, double );
+}
+
+CREATE_CB FollowCreate
+CODE
+	Creation();
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION FollowPreActivity
+CODE
+	PreActivity();
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION FollowPostActivity
+CODE
+	PostActivity();
+&&&&ENDCODE
+
+
+STATE_MACHINE LaneChange {
+	CHILDREN        LcMonitor, LcSignal, LcExecute, LcAbort
+	TRANSITIONS     (LcMonitor, LcExecute, AdoLcMonitorLcExecutePredicate)
+	TRANSITIONS     (LcMonitor, LcSignal, AdoLcMonitorLcSignalPredicate)
+	TRANSITIONS     (LcSignal, LcExecute, AdoLcSignalLcExecutePredicate)
+	TRANSITIONS     (LcSignal, LcAbort, AdoLcSignalLcAbortPredicate)
+	TRANSITIONS     (LcExecute, LcAbort, AdoLcExecuteLcAbortPredicate)
+	TRANSITIONS     (LcExecute, LcMonitor, AdoLcExecuteLcMonitorPredicate)
+	TRANSITIONS     (LcAbort, LcMonitor, AdoLcAbortLcMonitorPredicate)
+	CREATE_CB       LaneChangeCreate
+	DELETE_CB       LaneChangeDelete
+	PRE_ACTIVITY    LaneChangePreActivity
+	POST_ACTIVITY   LaneChangePostActivity
+	INPUTS          (pI, CAdoInfoPtr), (FreeDriveTargVel, double)
+	OUTPUTS         (TargAccel, double)
+	OUTPUTS         (TargPos, CPoint3D)
+	OUTPUTS         (MaxSteer, double)
+
+	PRIV_DECL       void Creation();
+	PRIV_DECL       void PreActivity();
+	PRIV_DECL       void PostActivity();
+	PRIV_DECL       void Deletion();
+	PRIV_DECL       void NullifyOutputs();
+
+	PRIV_DECL       CLaneChangeConds m_conditions;
+}
+
+CREATE_CB LaneChangeCreate
+CODE
+	Creation();
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION LaneChangePreActivity
+CODE
+	PreActivity();
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION LaneChangePostActivity
+CODE
+	PostActivity();
+&&&&ENDCODE
+
+DELETE_CB LaneChangeDelete
+CODE
+	Deletion();
+&&&&ENDCODE
+
+PREDICATE_FUNCTION AdoLcMonitorLcExecutePredicate
+CODE
+	return LcMonitorLcExecutePredicate();
+&&&&ENDCODE
+
+PREDICATE_FUNCTION AdoLcMonitorLcSignalPredicate
+CODE
+	return LcMonitorLcSignalPredicate();
+&&&&ENDCODE
+
+PREDICATE_FUNCTION AdoLcSignalLcExecutePredicate
+CODE
+	return LcSignalLcExecutePredicate();
+&&&&ENDCODE 
+
+PREDICATE_FUNCTION AdoLcSignalLcAbortPredicate
+CODE
+	return LcSignalLcAbortPredicate();
+&&&&ENDCODE 
+
+PREDICATE_FUNCTION AdoLcExecuteLcAbortPredicate
+CODE
+	return LcExecuteLcAbortPredicate();
+&&&&ENDCODE 
+
+PREDICATE_FUNCTION AdoLcExecuteLcMonitorPredicate
+CODE
+	return LcExecuteLcMonitorPredicate();
+&&&&ENDCODE 
+
+PREDICATE_FUNCTION AdoLcAbortLcMonitorPredicate
+CODE
+	return LcAbortLcMonitorPredicate();
+&&&&ENDCODE
+
+
+STATE_MACHINE LcMonitor {
+	PRE_ACTIVITY    LcMonitorPreActivity
+	POST_ACTIVITY   LcMonitorPostActivity
+	INPUTS          (pI, CAdoInfoPtr)
+	INPUTS          (pCond, CLcCondsPtr)
+	INPUTS          (FreeDriveTargVel, double)
+
+	PRIV_DECL       void PreActivity();
+	PRIV_DECL       void PostActivity();
+	PRIV_DECL       bool LcMonitorLcSignalPredicate();
+	PRIV_DECL       bool LcMonitorLcExecutePredicate();
+	PRIV_DECL       void CheckPathGuidance( CAdoInfoPtr, CLaneChangeCond& );
+}
+
+PRE_ACTIVITY_FUNCTION LcMonitorPreActivity
+CODE
+	PreActivity();
+&&&&ENDCODE
+
+
+POST_ACTIVITY_FUNCTION LcMonitorPostActivity
+CODE
+	PostActivity();
+&&&&ENDCODE
+
+
+STATE_MACHINE LcSignal {
+	CREATE_CB       LcSignalCreation
+	PRE_ACTIVITY    LcSignalPreActivity
+	POST_ACTIVITY   LcSignalPostActivity
+	INPUTS          (pI, CAdoInfoPtr)
+	INPUTS          (pCond, CLcCondsPtr)
+
+	PRIV_DECL       void Creation();
+	PRIV_DECL       void PreActivity();
+	PRIV_DECL       void PostActivity();
+	PRIV_DECL       bool LcSignalLcExecutePredicate();
+	PRIV_DECL       bool LcSignalLcAbortPredicate();
+
+	PRIV_DECL       int m_signalFrame;
+}
+
+CREATE_CB LcSignalCreation
+CODE
+	Creation();
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION LcSignalPreActivity
+CODE
+	PreActivity();
+&&&&ENDCODE
+
+
+POST_ACTIVITY_FUNCTION LcSignalPostActivity
+CODE
+	PostActivity();
+&&&&ENDCODE
+
+
+STATE_MACHINE LcExecute {
+	CHILDREN        LcExecuteNeutralize, LcExecuteIncrement, LcExecuteSteady, LcExecuteDecrement
+	CREATE_CB       LcExecuteCreation
+	PRE_ACTIVITY    LcExecutePreActivity
+	POST_ACTIVITY   LcExecutePostActivity
+	INPUTS          (pI, CAdoInfoPtr)
+	INPUTS          (pCond, CLcCondsPtr)
+	OUTPUTS         (TargAccel, double)
+	OUTPUTS         (TargPos, CPoint3D)
+	TRANSITIONS     (LcExecuteNeutralize, LcExecuteIncrement, ExecuteLcNeutralizeLcIncrementPredicate)
+	TRANSITIONS     (LcExecuteIncrement, LcExecuteSteady, ExecuteLcIncrementLcSteadyPredicate)
+	TRANSITIONS     (LcExecuteSteady, LcExecuteDecrement, ExecuteLcSteadyLcDecrementPredicate)
+	TRANSITIONS     (LcExecuteDecrement, LcExecuteNeutralize, ExecuteLcDecrementLcNeutralizePredicate)
+
+	TRANSITIONS     (LcExecuteIncrement, LcExecuteNeutralize, ExecuteLcIncrementLcAbortPredicate)
+	TRANSITIONS     (LcExecuteSteady, LcExecuteNeutralize, ExecuteLcSteadyLcAbortPredicate)
+	TRANSITIONS     (LcExecuteDecrement, LcExecuteNeutralize, ExecuteLcDecrementLcAbortPredicate)
+
+
+	PRIV_DECL       void Creation();
+	PRIV_DECL       void PreActivity();
+	PRIV_DECL       void PostActivity();
+	PRIV_DECL       bool LcExecuteLcAbortPredicate();
+	PRIV_DECL       bool LcExecuteLcMonitorPredicate();
+	PRIV_DECL       void CalcTargRoadPos( CAdoInfoPtr&, CRoadPos& );
+	PRIV_DECL       double CalcTotalLatDist( CAdoInfoPtr&, const CRoadPos&, bool isAdoPos );
+	PRIV_DECL       double CalcTargOffset( CAdoInfoPtr&, double );
+
+	PRIV_DECL		bool m_firstFrame;
+	PRIV_DECL		bool m_startLcFrame;
+	PRIV_DECL       CRoadPos m_targRoadPos;
+
+	PRIV_DECL		deque<double> m_storeRoadAngle;
+	PRIV_DECL		double m_maxRoadAngle;
+	PRIV_DECL		double m_lastTargetOffset;
+	PRIV_DECL		double m_currLookAheadTime;
+	PRIV_DECL       bool m_overShotLc; 
+
+}
+
+CREATE_CB LcExecuteCreation
+CODE
+	Creation();
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION LcExecutePreActivity
+CODE
+	PreActivity();
+&&&&ENDCODE
+
+
+POST_ACTIVITY_FUNCTION LcExecutePostActivity
+CODE
+	PostActivity();
+&&&&ENDCODE
+
+
+PREDICATE_FUNCTION ExecuteLcNeutralizeLcIncrementPredicate
+CODE
+	return LcNeutralizeIncrementPredicate();
+&&&&ENDCODE 
+
+PREDICATE_FUNCTION ExecuteLcIncrementLcSteadyPredicate
+CODE
+	return LcIncrementSteadyPredicate();
+&&&&ENDCODE 
+
+PREDICATE_FUNCTION ExecuteLcSteadyLcDecrementPredicate
+CODE
+	return LcSteadyDecrementPredicate();
+&&&&ENDCODE 
+
+PREDICATE_FUNCTION ExecuteLcDecrementLcNeutralizePredicate
+CODE
+	return LcDecrementNeutralizePredicate();
+&&&&ENDCODE 
+
+
+PREDICATE_FUNCTION ExecuteLcIncrementLcAbortPredicate
+CODE
+	return LcIncrementLcAbortPredicate();
+&&&&ENDCODE 
+
+PREDICATE_FUNCTION ExecuteLcSteadyLcAbortPredicate
+CODE
+	return LcSteadyLcAbortPredicate();
+&&&&ENDCODE 
+
+PREDICATE_FUNCTION ExecuteLcDecrementLcAbortPredicate
+CODE
+	return LcDecrementLcAbortPredicate();
+&&&&ENDCODE 
+
+STATE_MACHINE LcAbort {
+    CREATE_CB       LcAbortCreation
+	PRE_ACTIVITY    LcAbortPreActivity
+	POST_ACTIVITY   LcAbortPostActivity
+	INPUTS          (pI, CAdoInfoPtr)
+	INPUTS          (pCond, CLcCondsPtr)
+
+	PRIV_DECL       void PreActivity();
+	PRIV_DECL       void PostActivity();
+	PRIV_DECL       bool LcAbortLcMonitorPredicate();
+	PRIV_DECL       void Creation();
+	PRIV_DECL       bool m_scenarioTriggeredAbort;
+	PRIV_DECL		bool m_firstFrame;
+	PRIV_DECL       int m_abortCount;
+}
+
+CREATE_CB LcAbortCreation
+CODE
+	Creation();
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION LcAbortPreActivity
+CODE
+	PreActivity();
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION LcAbortPostActivity
+CODE
+	PostActivity();
+&&&&ENDCODE
+
+
+STATE_MACHINE LcExecuteNeutralize {
+	POST_ACTIVITY   LcExecuteNeutralizePostActivity
+	INPUTS          (pI, CAdoInfoPtr)
+	INPUTS          (pCond, CLcCondsPtr)
+	OUTPUTS         (TargOffset, double)
+
+	PRIV_DECL       void UserPostActivity();
+	PRIV_DECL       bool LcNeutralizeIncrementPredicate();
+}
+
+POST_ACTIVITY_FUNCTION LcExecuteNeutralizePostActivity
+CODE
+	UserPostActivity();
+&&&&ENDCODE
+
+
+STATE_MACHINE LcExecuteIncrement {
+	POST_ACTIVITY   LcExecuteIncrementPostActivity
+	INPUTS          (pI, CAdoInfoPtr)
+	INPUTS          (pCond, CLcCondsPtr)
+	OUTPUTS         (TargOffset, double)
+	OUTPUTS         (TargLookAhead, double)
+
+	PRIV_DECL       void UserPostActivity();
+	PRIV_DECL       bool LcIncrementSteadyPredicate();
+	PRIV_DECL       bool LcIncrementDecrementPredicate();
+	PRIV_DECL       bool LcIncrementLcAbortPredicate();
+}
+
+POST_ACTIVITY_FUNCTION LcExecuteIncrementPostActivity
+CODE
+	UserPostActivity();
+&&&&ENDCODE
+
+
+STATE_MACHINE LcExecuteSteady {
+	POST_ACTIVITY   LcExecuteSteadyPostActivity
+	INPUTS          (pI, CAdoInfoPtr)
+	INPUTS          (pCond, CLcCondsPtr)
+	OUTPUTS         (TargOffset, double)
+	OUTPUTS         (TargLookAhead, double)
+
+	PRIV_DECL       void UserPostActivity();
+	PRIV_DECL       bool LcSteadyDecrementPredicate();
+	PRIV_DECL       bool LcSteadyLcAbortPredicate();
+}
+
+POST_ACTIVITY_FUNCTION LcExecuteSteadyPostActivity
+CODE
+	UserPostActivity();
+&&&&ENDCODE
+
+
+STATE_MACHINE LcExecuteDecrement {
+	POST_ACTIVITY   LcExecuteDecrementPostActivity
+	INPUTS          (pI, CAdoInfoPtr)
+	INPUTS          (pCond, CLcCondsPtr)
+	OUTPUTS         (TargOffset, double)
+	OUTPUTS         (TargLookAhead, double)
+
+	PRIV_DECL       void UserPostActivity();
+	PRIV_DECL       bool LcDecrementNeutralizePredicate();
+	PRIV_DECL       bool LcDecrementLcAbortPredicate();
+}
+
+POST_ACTIVITY_FUNCTION LcExecuteDecrementPostActivity
+CODE
+	UserPostActivity();
+&&&&ENDCODE
+
+
+
+STATE_MACHINE NavigateIntrsctn {
+	CREATE_CB       NavigateIntrsctnCreate
+	PRE_ACTIVITY    NavigateIntrsctnPreActivity
+	POST_ACTIVITY   NavigateIntrsctnPostActivity
+	INPUTS          (pI, CAdoInfoPtr)
+	OUTPUTS         (TargAccel, double), (ImTargCrdrs, string)
+	OUTPUTS         (HasStopSignTarget, bool)
+	OUTPUTS         (StoppedAtStopSignFrame, int)
+
+
+	PRIV_DECL       void Creation();
+	PRIV_DECL       void PreActivity();
+	PRIV_DECL       void PostActivity();
+	PRIV_DECL       void ResetStopSignVars();
+
+	PRIV_DECL       deque<int> m_signaledIntrsctns;
+	PRIV_DECL       bool m_madeStopSignCheck;
+	PRIV_DECL       bool m_stopSignCrdr;
+	PRIV_DECL       double m_stopSignHldOfsDist;
+	PRIV_DECL       bool m_madeTheNeededStop;
+	PRIV_DECL       int m_StoppedAtStopSignFrame;
+	PRIV_DECL       int m_tempStartFrames;
+	PRIV_DECL       bool m_firstFrame;
+	PRIV_DECL       double m_firstDist;
+	PRIV_DECL       double m_minDist;
+}
+
+CREATE_CB NavigateIntrsctnCreate
+CODE
+	Creation();
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION NavigateIntrsctnPreActivity
+CODE
+	PreActivity();
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION NavigateIntrsctnPostActivity
+CODE
+	PostActivity();
+&&&&ENDCODE
+
+
+
+STATE_MACHINE Merge {
+	CREATE_CB       MergeCreate
+	PRE_ACTIVITY    MergePreActivity
+	POST_ACTIVITY   MergePostActivity
+	INPUTS          (pI, CAdoInfoPtr)
+	OUTPUTS         (TargAccel, double)
+
+	PRIV_DECL       void UserCreation();
+	PRIV_DECL       void UserPreActivity();
+	PRIV_DECL       void UserPostActivity();
+	PRIV_DECL       EMergeState m_state;
+	PRIV_DECL       bool m_isMergeLaneChangeDone;
+	PRIV_DECL		bool m_isOnMergeRoad;
+	PRIV_DECL       bool m_firstFrame;
+	PRIV_DECL       double m_firstDist;
+	PRIV_DECL       double m_minDist;
+	PRIV_DECL       double m_prevFollowActualDist;
+	PRIV_DECL       long m_currFollEngTime;
+	PRIV_DECL       double m_initFollDist;
+	PRIV_DECL       int  m_lastLeadId;
+	PRIV_DECL       double  m_distToP1Ado;
+	PRIV_DECL       double  m_distToP1ApprchObj;
+	PRIV_DECL       TFollowParams m_mergeParams;
+	PRIV_DECL       double m_mergeTtc;
+	PRIV_DECL		CCrdr m_targCrdr;
+	PRIV_DECL		double m_distAtP1;
+	PRIV_DECL       int  m_gapObjId;
+
+	PRIV_DECL		void ComputeTimeToArrival( CAdoInfoPtr& pI, int objId,  double dist, double& tta );
+	PRIV_DECL		bool ComputeApprchObjDistToP1( CAdoInfoPtr& pI, int gapObjId, double& distToP1 );
+	PRIV_DECL		void ComputeActualDist( CAdoInfoPtr& pI, double apprchObjDistToP1, double& acutalDist );
+	PRIV_DECL       void ProcessOffState( CAdoInfoPtr& pI, double& targAccel );
+	PRIV_DECL 		bool CheckMergeRoad( CAdoInfoPtr& pI );
+	PRIV_DECL		bool TransitionOffToGapSearch( CAdoInfoPtr& pI );
+	PRIV_DECL		bool TransitionGapSearchToTrack( bool hasGap );
+	PRIV_DECL		bool TransitionGapSearchToOff( CAdoInfoPtr& pI );
+	PRIV_DECL       bool GapSearch( CAdoInfoPtr& pI, int& gapObjId, double& targAccel );
+	PRIV_DECL       bool ProcessGapSearchState( CAdoInfoPtr& pI, int& gapObjId, double& targAccel );
+	PRIV_DECL       bool ProcessTrackState( CAdoInfoPtr& pI, double actualDist, double& targAccel );
+	PRIV_DECL		bool TransitionTrackToGapSearch( bool hasTrack );
+	PRIV_DECL		bool TransitionTrackToOff( CAdoInfoPtr& pI ); 
+
+
+}
+
+CREATE_CB MergeCreate
+CODE
+	UserCreation();
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION MergePreActivity
+CODE
+	UserPreActivity();
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION MergePostActivity
+CODE
+	UserPostActivity();
+&&&&ENDCODE

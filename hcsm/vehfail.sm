@@ -1,0 +1,39 @@
+STATE_MACHINE VehFail {
+	CREATE_CB       VehFailCreate
+	DELETE_CB       VehFailDelete
+	PRE_ACTIVITY    VehFailPreActivity
+	POST_ACTIVITY   VehFailPostActivity
+	PRIV_DECL       void UserCreation( const CVehFailParseBlock* );
+	PRIV_DECL       void UserPreActivity( const CVehFailParseBlock* );
+	PRIV_DECL       void UserPostActivity( const CVehFailParseBlock* );
+	PRIV_DECL       void UserDeletion( const CVehFailParseBlock* );
+	PRIV_DECL		int			    m_Socket;
+	PRIV_DECL       int             m_CmdSock;
+	PRIV_DECL       TFailureQueue   m_Failures;
+
+	DIALS			(Failure, string, Failure_Text)
+	
+	DIAL_INFO       (Failure, 0, Failure, int, Failure, 1, The_Failure_Catagory)
+	DIAL_INFO       (Failure, 0, Type, int, Type, 1, The_Type_of_Failure)
+	DIAL_INFO       (Failure, 0, Time, int, Time, 1, The_Duration_of_Failure)	
+}
+
+CREATE_CB VehFailCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB VehFailDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION VehFailPreActivity
+CODE
+	UserPreActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION VehFailPostActivity
+CODE
+	UserPostActivity( pSnoBlock );
+&&&&ENDCODE

@@ -1,0 +1,174 @@
+SM v1.0
+
+CODE
+
+#ifdef _WIN32
+#pragma warning( disable : 4786 )  
+#endif
+
+#include <snoblock.h>
+#include <splineHermite.h>
+#include <splineHermiteNonNorm.h>
+#include <cvedpub.h>
+#include <randnumgen.h>
+
+#include <set>
+#include <vector>
+using namespace std;
+
+#include "util.h"
+#include "hcsmconnect.h"
+#include "objectinitcond.h"
+#include "triggerfirecond.h"
+#include "action.h"
+#include "clg.h"
+#include "candidateset.h"
+#include "adoinfo.h"
+#include "lanechangeconds.h"
+#include "vehdyncommand.h"
+#include "vehfailclient.h"
+#include "expeval.h"
+#include "expevalAdo.h"
+#include "expevalTTA.h"
+
+typedef class CAdoInfo* CAdoInfoPtr;
+typedef class CLaneChangeConds* CLcCondsPtr;
+typedef queue<CVehFailClient::TVehFailure>  TFailureQueue;
+
+const int cMAX_IM_INTRSCTN = 600;
+const int cMAX_ACTIVE_IM_INTRSCTN = 60;
+
+
+enum EImTravelState { eSTOP, eGO, eUNKNOWN };
+enum EMergeState { eMERGE_OFF, eMERGE_GAP_SEARCH, eMERGE_TRACK };
+
+typedef struct TImIntrsctn 
+{
+	bool active;
+	bool disabled;
+	int  activeImIdx;
+} TImIntrsctn;
+
+typedef struct TImActiveObjInfo 
+{
+	EImTravelState travelState;
+	int            stoppedForObj;
+	int            framesStopped;
+} TImActiveObjInfo;
+
+class CImActiveIntrsctn {
+public:
+	CImActiveIntrsctn();
+	CImActiveIntrsctn( const CImActiveIntrsctn& );
+	CImActiveIntrsctn& operator=( const CImActiveIntrsctn& );
+	~CImActiveIntrsctn();
+
+	int m_intrsctnIdx;
+	set<int> m_objs;
+	map<int, TImActiveObjInfo> m_objInfo;
+	set<int> m_removeObjs;
+};
+
+inline
+CImActiveIntrsctn::CImActiveIntrsctn() 
+	:
+	m_intrsctnIdx( -1 ) 
+{}
+
+inline
+CImActiveIntrsctn::CImActiveIntrsctn( const CImActiveIntrsctn& cObjToCopy )
+{
+	// call the assignment operator
+	*this = cObjToCopy;
+}
+
+inline CImActiveIntrsctn& 
+CImActiveIntrsctn::operator=( const CImActiveIntrsctn& cObjToCopy )
+{
+	// check to make sure that object passed in is not me
+	bool notMe = this != &cObjToCopy;
+	if( notMe )
+	{
+		m_intrsctnIdx = cObjToCopy.m_intrsctnIdx;
+		m_objs = cObjToCopy.m_objs;
+		m_objInfo = cObjToCopy.m_objInfo;
+		m_removeObjs = cObjToCopy.m_removeObjs;
+	}
+
+	return *this;
+}
+
+inline
+CImActiveIntrsctn::~CImActiveIntrsctn()
+{
+}
+
+typedef struct
+{
+	int obj;
+	bool priority;
+} TAttachedList;
+
+typedef struct 
+{
+	int objId;
+	vector<TAttachedList> vehicleList;
+	double hldOfsDist;
+	bool  stopDueToLight;
+	bool  stopDueToAvoidCollision;
+    int   stopCheckFrame;
+	bool  isOnRamp;
+} TVehiclePriorityList;
+
+
+
+typedef struct
+{
+	CRoadPos roadpos;
+	int priority;
+} TTmCreationPoint;
+
+typedef struct
+{
+	int numObjsFront;
+	int numObjsBack;
+} TTmObjsOnLaneInfo;
+
+typedef struct
+{
+	int	   cvedObjId;
+	double distToOwnship;
+	bool   aheadOfOwnship;
+	bool   markedForDeletion;
+} TTmObj;
+
+typedef int BrakeData;
+typedef int TurnSignal;
+
+typedef struct
+{
+	CPoint3D objPosition;
+	CVector3D objOrientation;		
+	TurnSignal signal;		
+	BrakeData brake;
+} TDaqData;
+
+&&&&ENDCODE
+
+ExtFile ddo.sm
+ExtFile VirtualObject.sm
+ExtFile triggers.sm
+ExtFile gateway.sm
+ExtFile ado.sm
+ExtFile environmentcontroller.sm
+ExtFile enviroinfo.sm
+ExtFile intersectionmanager.sm
+ExtFile ownvehiclemirror.sm
+ExtFile staticobjmanager.sm
+ExtFile trafficlightmanager.sm
+ExtFile trafficmanager.sm
+ExtFile trafficsource.sm
+ExtFile vehfail.sm
+ExtFile drivermirror.sm
+ExtFile trafficdata.sm
+ExtFile daqdriver.sm

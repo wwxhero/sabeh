@@ -1,0 +1,39 @@
+STATE_MACHINE DaqDriver {
+	CREATE_CB       DaqDriverCreate
+	DELETE_CB       DaqDriverDelete
+	PRE_ACTIVITY    DaqDriverPreActivity
+	POST_ACTIVITY   DaqDriverPostActivity
+
+	PRIV_DECL       void UserCreation( const CDaqDriverParseBlock* );
+	PRIV_DECL       void UserPreActivity( const CDaqDriverParseBlock* );
+	PRIV_DECL       void UserPostActivity( const CDaqDriverParseBlock* );
+	PRIV_DECL       void UserDeletion( const CDaqDriverParseBlock* );
+
+	PRIV_DECL       void ProcessOneDaqFrame();
+
+	PRIV_DECL		CDynObj* m_pObj;
+	PRIV_DECL		CFastDeque<TDaqData> m_DaqDataContainer;
+	PRIV_DECL       double m_dataFreq;
+	PRIV_DECL       double m_executionMultiplier;
+	PRIV_DECL       int m_framesSinceLastExecution;
+}
+
+CREATE_CB DaqDriverCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB DaqDriverDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION DaqDriverPreActivity
+CODE
+	UserPreActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION DaqDriverPostActivity
+CODE
+	UserPostActivity( pSnoBlock );
+&&&&ENDCODE

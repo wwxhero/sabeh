@@ -1,0 +1,238 @@
+STATE_MACHINE Calculator {
+		CREATE_CB		CalculatorCreate
+		DELETE_CB		CalculatorDelete
+		PRE_ACTIVITY	CalculatorPreActivity
+		POST_ACTIVITY	CalculatorPostActivity
+		CHILDREN		Left, Right
+		TRANSITIONS		(Left, Right, LeftRightPredicate)
+		TRANSITIONS		(Right, Left, RightLeftPredicate)
+		LOCALS          (Total, int)
+		BUTTONS         (Omar, omar)
+}
+
+CREATE_CB CalculatorCreate
+CODE
+SetLocalTotal( 0 );
+m_activeChild = m_children[0];
+m_defaultActiveChild = m_children[0];
+&&&&ENDCODE
+
+DELETE_CB CalculatorDelete
+CODE
+//cout << endl << "The final Value was: " << GetLocalTotal() << endl;
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION CalculatorPreActivity
+CODE
+int frame = GetFrame();
+
+if ( frame < 12 && frame > 1) {
+	if ( frame % 2 != 0 ) {  // Odd frame -> write to Left
+		SetInputLeftInputForLeft( frame );
+//		cout << "Calc wrote to Left in frame " << frame << endl;
+	} else {
+		SetInputRightInputForRight( frame );
+//		cout << "Calc wrote to Right in frame " << frame << endl;
+	}
+}
+
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION CalculatorPostActivity
+CODE
+int frame = GetFrame();
+
+//if ( frame % 2 != 0 ) {
+//	SetDialDInput(frame);
+//}
+//else {
+//	// Read monitor of Outsider
+//}
+
+if ( frame > 1 ) {
+	int tmp;
+	if ( frame % 2 != 0 ) {  // Odd frame -> read from Left
+//		cout << "Left's result was: " << GetOutputLeftOutputFromLeft() << endl;
+		tmp = GetLocalTotal() + GetOutputLeftOutputFromLeft();
+		SetLocalTotal( tmp );
+	} else {
+//		cout << "Right's results was: " << GetOutputRightOutputFromRight() << endl;
+		tmp = GetLocalTotal() + GetOutputRightOutputFromRight();
+		SetLocalTotal( tmp );
+	}
+//	cout << "Current total is: " << tmp << endl;
+}
+
+&&&&ENDCODE
+
+PREDICATE_FUNCTION LeftRightPredicate
+CODE
+return true;
+&&&&ENDCODE
+
+PREDICATE_FUNCTION RightLeftPredicate
+CODE
+return true;
+&&&&ENDCODE
+
+PRIV_USER_FUNC Ben
+CODE
+cout << "This User Function worked!!!" << endl;
+&&&&ENDCODE
+
+STATE_MACHINE Left {
+		PRE_ACTIVITY	LeftPreActivity
+		POST_ACTIVITY	LeftPostActivity
+		CHILDREN		LeftOne, LeftTwo
+		INPUTS		(LeftInput, int)
+		OUTPUTS		(LeftOutput, int)
+		LOCALS		(LeftAutoTransfer, int)
+}
+
+PRE_ACTIVITY_FUNCTION LeftPreActivity
+CODE
+//cout << "Left says that its InputVariable is: " << GetInputLeftInput() << " in frame " << GetFrame() << endl;
+SetLocalLeftAutoTransfer( GetInputLeftInput() );
+SetInputLeftAutoTransferForLeftOne( GetInputLeftInput() );
+SetInputLeftAutoTransferForLeftTwo( GetInputLeftInput() );
+
+//	Because Left shares it's local parameter identifier with the
+//	input parameters of LeftOne and LeftTwo (it's children) the contents
+//	in LeftAutoTransfer automatically get copied at the end of 
+//	the Pre-Activity Function.
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION LeftPostActivity
+CODE
+int frame, result = 0;
+
+frame = GetFrame();
+result = GetOutputLeftOneOutputFromLeftOne() + GetOutputLeftTwoOutputFromLeftTwo();
+
+SetOutputLeftOutput( result );
+//cout << "Left said that it's Output to Calc was: " << GetOutputLeftOneOutputFromLeftOne() << " + " << GetOutputLeftTwoOutputFromLeftTwo() << endl;
+
+&&&&ENDCODE
+
+STATE_MACHINE Right {
+		PRE_ACTIVITY	RightPreActivity
+		POST_ACTIVITY	RightPostActivity
+		CHILDREN		RightOne, RightTwo
+		INPUTS		(RightInput, int)
+		OUTPUTS		(RightOutput, int)
+		LOCALS		(RightAutoTransfer, int)
+}
+
+PRE_ACTIVITY_FUNCTION RightPreActivity
+CODE
+//cout << "Right says that its InputVariable is: " << GetInputRightInput() << " in frame " << GetFrame() << endl;
+SetLocalRightAutoTransfer( GetInputRightInput() - 3 );
+SetInputRightAutoTransferForRightOne( GetInputRightInput() - 3 );
+SetInputRightAutoTransferForRightTwo( GetInputRightInput() - 3 );
+
+
+//	Because Right shares it's local parameter identifier with the
+//	input parameters of RightOne and RightTwo (it's children) the contents
+//	in RightAutoTransfer automatically get copied at the end of 
+//	the Pre-Activity Function.
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION RightPostActivity
+CODE
+int frame, result = 0;
+
+frame = GetFrame();
+result = GetOutputRightOneOutputFromRightOne() + GetOutputRightTwoOutputFromRightTwo();
+//cout << "Right said that it's Output to Calc was: " << GetOutputRightOneOutputFromRightOne() << " + " << GetOutputRightTwoOutputFromRightTwo() << endl;
+
+SetOutputRightOutput( result );
+&&&&ENDCODE
+
+STATE_MACHINE LeftOne {
+		PRE_ACTIVITY	LeftOnePreActivity
+		POST_ACTIVITY	LeftOneActivity
+		INPUTS		(LeftAutoTransfer, int)
+		OUTPUTS		(LeftOneOutput, int)
+}
+
+PRE_ACTIVITY_FUNCTION LeftOnePreActivity
+CODE
+//cout << "This is Left One's pre activity function" << endl;
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION LeftOneActivity
+CODE
+//cout << "LeftOne says its input is " << GetInputLeftAutoTransfer() << endl;
+SetOutputLeftOneOutput( GetInputLeftAutoTransfer() + 3 );
+&&&&ENDCODE
+
+STATE_MACHINE LeftTwo {
+		POST_ACTIVITY	LeftTwoActivity
+		INPUTS		(LeftAutoTransfer, int)
+		OUTPUTS		(LeftTwoOutput, int)
+}
+
+POST_ACTIVITY_FUNCTION LeftTwoActivity
+CODE
+//cout << "LeftTwo says its input is " << GetInputLeftAutoTransfer() << endl;
+SetOutputLeftTwoOutput( GetInputLeftAutoTransfer() - 5 );
+&&&&ENDCODE
+
+STATE_MACHINE RightOne {
+		POST_ACTIVITY	RightOneActivity
+		INPUTS		(RightAutoTransfer, int)
+		OUTPUTS		(RightOneOutput, int)
+}
+
+POST_ACTIVITY_FUNCTION RightOneActivity
+CODE
+//cout << "RightOne says its input is " << GetInputRightAutoTransfer() << endl;
+SetOutputRightOneOutput( GetInputRightAutoTransfer() + 3 );
+&&&&ENDCODE
+
+STATE_MACHINE RightTwo {
+		POST_ACTIVITY	RightTwoActivity
+		INPUTS		(RightAutoTransfer, int)
+		OUTPUTS		(RightTwoOutput, int)
+}
+
+POST_ACTIVITY_FUNCTION RightTwoActivity
+CODE
+//cout << "RightTwo says its input is " << GetInputRightAutoTransfer() << endl;
+SetOutputRightTwoOutput( GetInputRightAutoTransfer() - 5 );
+&&&&ENDCODE
+
+STATE_MACHINE Outsider {
+		PRE_ACTIVITY	OutsiderPreActivity
+		DIALS			(DInput, int, D_Input)
+		MONITOR		(MonOut, int)
+}
+
+PRE_ACTIVITY_FUNCTION OutsiderPreActivity
+CODE
+// At the end of every odd frame number, Calculator will write a value
+// to the dial of Outsider.  This value will not become available until
+// the next frame which would be even.
+//
+// At the end of every even frame Outsider will write the result of its
+// caluculation to its monitor.  This value will not appear until the
+// next frame which would be odd.  This value will be read by Calculator
+// and used in its calculations.
+
+int frame = GetFrame();
+
+//SetDialDInput (frame);
+
+cout << "Value on the dial in frame #" << frame  << " is " << GetDialDInput() << endl;
+
+if (frame % 2 == 0 ) { // Even frame -- New value is on dial
+	int tmp = GetDialDInput() * 2;
+	SetMonitorMonOut( tmp );
+}
+
+else {
+	int tmp = GetMonitorMonOut();
+	cout << "Value on the Monitor from the previous frame is " << tmp << endl;
+}
+
+&&&&ENDCODE

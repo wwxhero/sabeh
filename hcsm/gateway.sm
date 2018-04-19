@@ -1,0 +1,30 @@
+STATE_MACHINE Gateway {
+	CREATE_CB		GWCreate
+	DELETE_CB		GWDelete
+	PRE_ACTIVITY	GWPreActv
+	PRIV_DECL		void CreateWorker (const CGatewayParseBlock* pBlock );
+	PRIV_DECL		void DeleteWorker (const CGatewayParseBlock* pBlock );
+	PRIV_DECL		void Worker(void);
+	PRIV_DECL		void DispatchMessage(int sock);
+	PRIV_DECL		void HandleGetDynaObjsMsg(int sock, TMsgHeader &head);
+	PRIV_DECL		void HandleGetInstObjsMsg(int sock, TMsgHeader &head);
+	PRIV_DECL		void HandleTakeObjControlMsg(int sock, TMsgHeader &head);
+	PRIV_DECL		void HandleControlObjMsg(int sock, TMsgHeader &head);
+	PRIV_DECL		void HandleReleaseObjCntrlMsg(int sock, TMsgHeader &head);
+}
+
+CREATE_CB GWCreate
+CODE
+	CreateWorker( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB GWDelete
+CODE
+	DeleteWorker( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION GWPreActv
+CODE
+	Worker( );
+&&&&ENDCODE
+

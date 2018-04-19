@@ -1,0 +1,87 @@
+STATE_MACHINE Ddo {
+	CREATE_CB       DdoCreate
+	DELETE_CB       DdoDelete
+	PRE_ACTIVITY    DdoPreActivity
+	POST_ACTIVITY   DdoPostActivity
+	BUTTONS         (TurnOnAnimation, Turn_On_Animation)
+	BUTTONS		    (TurnOffAnimation, Turn_Off_Animation)
+	DIALS			(AudioState, int)
+	DIALS			(VisualState, int)
+	DIALS			(Mode, int)
+	DIALS			(Dependent, int)
+	DIALS			(SpeedOverRide, double)
+	DIALS			(DiGuyAction, string)
+	DIAL_INFO       (AudioState, 0, AudioState, int, Audio_bits, 16, The_audio_sound_to_generate)
+	DIAL_INFO       (VisualState, 0, LightState, int, bits, 16, The_state_of_the_light)
+	DIAL_INFO       (VisualState, 1, Duration, int, seconds, 2, How_long_to_keep_light_state)	
+	DIAL_INFO       (Mode, 0, Mode, int, int, 0, Mode)
+	DIAL_INFO       (Dependent, 0, Dependent, int, int, 0, Is_the_dDDO_still_dependent)
+	DIAL_INFO       (SpeedOverRide, 0, SpeedOverRide, double, double, 0, Is_the_dDDO_still_dependent)
+	DIAL_INFO       (DiGuyAction, 0, Direction, string, direction, right, Direction_of_lane_change)
+	
+	
+	
+	MONITOR         (RoadPos, CRoadPos)
+
+	PRIV_DECL       void UserCreation( const CDdoParseBlock* );
+	PRIV_DECL       void UserActivity( const CDdoParseBlock* );
+	PRIV_DECL       void UserDeletion( const CDdoParseBlock* );
+	PRIV_DECL       EInitCond m_lastState;
+	PRIV_DECL       bool m_quitAtEnd;
+	PRIV_DECL       CPoint3D m_last3DPos;
+	PRIV_DECL       CVector2D m_lastDirection;
+	PRIV_DECL       CVector2D m_lastOrientation;
+	PRIV_DECL       int m_dependent;
+	PRIV_DECL       bool m_isDiGuy;
+	PRIV_DECL       double m_speedOveride;
+	PRIV_DECL       bool m_doOverideSpeed;
+	PRIV_DECL       bool m_takeAccelIntoAccount;
+	PRIV_DECL       CPoint3D m_referencePoint;
+	PRIV_DECL       int m_target;
+	PRIV_DECL       CPoint3D m_vehicleReferencePoint;
+	PRIV_DECL       CObjectInitCond m_initConditions;
+ 	PRIV_DECL       CCubicSplinePos m_lastSplinePos;
+ 	PRIV_DECL       CSplineHermiteNonNorm m_spline;
+	PRIV_DECL       CVED::CTrajFollowerObj* m_pDdo;
+	PRIV_DECL       vector <double> m_velocityVector;
+	PRIV_DECL       vector <double> m_delayVector;
+	PRIV_DECL       vector <double> m_orientVector;
+	PRIV_DECL       bool m_trajIsGlobal;
+	PRIV_DECL       string m_parentName;
+	PRIV_DECL       int m_curModeDialVal;
+	PRIV_DECL       CVector3D m_initPosOffset;
+	PRIV_DECL       int m_useInitVel;
+	PRIV_DECL       bool m_enableAni;
+	PRIV_DECL       float m_currentVel;
+	PRIV_DECL       float m_maxAccel_fps2;
+	PRIV_DECL       float m_maxDecel_fps2;
+	PRIV_DECL       bool m_isAnimationOn;
+	PRIV_DECL       bool m_isFirstRun;
+	PRIV_DECL       FILE* m_debugPointsFile;
+	PRIV_DECL       long m_prevRoadPosFrame;
+	PRIV_DECL       CRoadPos m_currRoadPos;
+	PRIV_DECL       void CreateCvedObject( const CDdoParseBlock*, const CPoint3D&, const CVector3D& );
+	PRIV_DECL       void SetControlInputs(const CPoint3D&);
+	PRIV_DECL       string m_currDiGuyActionDialString;
+	PRIV_DECL		void HandleDials( void );
+}
+
+CREATE_CB DdoCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB DdoDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION DdoPreActivity
+CODE
+	UserActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION DdoPostActivity
+CODE
+;
+&&&&ENDCODE

@@ -1,0 +1,35 @@
+STATE_MACHINE EnvironmentController {
+	CREATE_CB       EnvironmentControllerCreate
+	DELETE_CB       EnvironmentControllerDelete
+	PRE_ACTIVITY    EnvironmentControllerPreActivity
+	POST_ACTIVITY   EnvironmentControllerPostActivity
+	PRIV_DECL       void UserCreation( const CEnvControlParseBlock* );
+	PRIV_DECL       void UserPreActivity( const CEnvControlParseBlock* );
+	PRIV_DECL       void UserPostActivity( const CEnvControlParseBlock* );
+	PRIV_DECL       void UserDeletion( const CEnvControlParseBlock* );
+
+	PRIV_DECL       void MakeStringUpper( string& s );
+	PRIV_DECL       eCVEnviroType StringToLightState( const string& str );
+	PRIV_DECL       void Dump( void );
+	
+}
+
+CREATE_CB EnvironmentControllerCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB EnvironmentControllerDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION EnvironmentControllerPreActivity
+CODE
+	UserPreActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION EnvironmentControllerPostActivity
+CODE
+	UserPostActivity( pSnoBlock );
+&&&&ENDCODE

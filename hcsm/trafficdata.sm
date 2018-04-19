@@ -1,0 +1,37 @@
+STATE_MACHINE TrafficData {
+	CREATE_CB       TrafficDataCreate
+	DELETE_CB       TrafficDataDelete
+	PRE_ACTIVITY    TrafficDataPreActivity
+	POST_ACTIVITY   TrafficDataPostActivity
+
+	PRIV_DECL       void UserCreation( const CTrafficDataParseBlock* );
+	PRIV_DECL       void UserPreActivity( const CTrafficDataParseBlock* );
+	PRIV_DECL       void UserPostActivity( const CTrafficDataParseBlock* );
+	PRIV_DECL       void UserDeletion( const CTrafficDataParseBlock* );
+
+	PRIV_DECL       bool m_logAllObjs;
+	PRIV_DECL       string m_logObjName;
+	PRIV_DECL       bool m_logAccel;
+	PRIV_DECL       double m_accelMin;
+	PRIV_DECL       double m_accelMax;
+}
+
+CREATE_CB TrafficDataCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB TrafficDataDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION TrafficDataPreActivity
+CODE
+	UserPreActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION TrafficDataPostActivity
+CODE
+	UserPostActivity( pSnoBlock );
+&&&&ENDCODE

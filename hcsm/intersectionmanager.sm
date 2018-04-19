@@ -1,0 +1,42 @@
+STATE_MACHINE IntersectionManager {
+	CREATE_CB       IntersectionManagerCreate
+	DELETE_CB       IntersectionManagerDelete
+	PRE_ACTIVITY    IntersectionManagerPreActivity
+	POST_ACTIVITY   IntersectionManagerPostActivity
+	PRIV_DECL       void UserCreation( const CIntersectionMngrParseBlock* );
+	PRIV_DECL       void UserPreActivity( const CIntersectionMngrParseBlock* );
+	PRIV_DECL       void UserPostActivity( const CIntersectionMngrParseBlock* );
+	PRIV_DECL       void UserDeletion( const CIntersectionMngrParseBlock* );
+	PRIV_DECL		void PrioritizeVehicles( const CIntrsctn&, const set<int>&, const map<int, TImActiveObjInfo>&, const vector<TCrdrPriorityList>&, const CObjTypeMask&, vector<TVehiclePriorityList>&, set<int>& );
+	PRIV_DECL       void SignalVehicles( const CIntrsctn&, const vector<TVehiclePriorityList>& );
+	PRIV_DECL       void SetVehicleState( int, EImTravelState, double );
+	PRIV_DECL       void RemoveInactiveIntrsctns();
+	PRIV_DECL       void ProcessRegisterRequests();
+	PRIV_DECL       void DebugActiveIntrsctns();
+	PRIV_DECL       bool BuildAdoTargCrdr( const CDynObj* cpObj, CHcsm* pObjHcsm, const CIntrsctn cIntrsctn, CCrdr& crdr );
+
+	PRIV_DECL       TImIntrsctn m_intrsctns[cMAX_IM_INTRSCTN];
+	PRIV_DECL       CImActiveIntrsctn m_activeIntrsctns[cMAX_ACTIVE_IM_INTRSCTN];
+	PRIV_DECL       int m_activeIntrsctnsLastElem;
+	PRIV_DECL       queue<int> m_freeActiveIntrsctnsIdx;
+}
+
+CREATE_CB IntersectionManagerCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB IntersectionManagerDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION IntersectionManagerPreActivity
+CODE
+	UserPreActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION IntersectionManagerPostActivity
+CODE
+	UserPostActivity( pSnoBlock );
+&&&&ENDCODE

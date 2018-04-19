@@ -1,0 +1,435 @@
+STATE_MACHINE TimeTrigger {
+	CREATE_CB		TimeTriggerCreate
+	DELETE_CB		TimeTriggerDelete
+	PRE_ACTIVITY	TimeTriggerPreActivity
+	POST_ACTIVITY	TimeTriggerPostActivity
+	BUTTONS			(FireTrigger, Fire_trigger)
+
+	PRIV_DECL       void UserCreation( const CTriggerParseBlock* );
+	PRIV_DECL       void UserActivity( const CTriggerParseBlock* );
+	PRIV_DECL       void UserDeletion( const CTriggerParseBlock* );
+	PRIV_DECL		bool Evaluate( void );
+	PRIV_DECL		void ExecuteConcurrentActions();
+	PRIV_DECL       void InitializeSequentialActions();
+	PRIV_DECL		void ExecuteSequentialActions();
+	PRIV_DECL       void SetTriggerFireLog( CAction::TActionIterator& aI );
+
+	PRIV_DECL		CObjectInitCond                 m_initCondition;
+	PRIV_DECL		CTriggerFireCond                m_fireCondition;
+	PRIV_DECL		CPoint3D                        m_prevPosition;
+	PRIV_DECL		EInitCond                       m_prevState;
+	PRIV_DECL		CVED::CCoordinatorObjectObj*    m_pTrigger;
+
+	PRIV_DECL		CAction::TActionVec             m_pActionVector;
+	PRIV_DECL       CAction::TActionIterator        m_pCurrentAction;
+	PRIV_DECL       bool                            m_sequentialActions;
+	PRIV_DECL       int                             m_delayFrameCount;
+	PRIV_DECL       bool                            m_waitingForAction;
+
+	PRIV_DECL		double                           m_time;
+}
+
+CREATE_CB TimeTriggerCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB TimeTriggerDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION TimeTriggerPreActivity
+CODE
+	UserActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION TimeTriggerPostActivity
+CODE
+	;
+&&&&ENDCODE
+
+STATE_MACHINE GmtrcPstnTrigger {
+	CREATE_CB		GmtrcPstnTriggerCreate
+	DELETE_CB		GmtrcPstnTriggerDelete
+	PRE_ACTIVITY	GmtrcPstnTriggerPreActivity
+	POST_ACTIVITY	GmtrcPstnTriggerPostActivity
+	BUTTONS			(FireTrigger, Fire_trigger)
+
+	PRIV_DECL       void UserCreation( const CTriggerParseBlock* );
+	PRIV_DECL       void UserActivity( const CTriggerParseBlock* );
+	PRIV_DECL       void UserDeletion( const CTriggerParseBlock* );
+	PRIV_DECL		void InitCandidates( const CTriggerParseBlock* );
+	PRIV_DECL		bool Evaluate( void );
+	PRIV_DECL		void ExecuteConcurrentActions();
+	PRIV_DECL       void InitializeSequentialActions();
+	PRIV_DECL		void ExecuteSequentialActions();
+
+	PRIV_DECL		CObjectInitCond                 m_initCondition;
+	PRIV_DECL		CTriggerFireCond                m_fireCondition;
+	PRIV_DECL		CPoint3D                        m_prevPosition;
+	PRIV_DECL		EInitCond                       m_prevState;
+	PRIV_DECL		CVED::CCoordinatorObjectObj*    m_pTrigger;
+
+	PRIV_DECL		CAction::TActionVec             m_pActionVector;
+	PRIV_DECL       CAction::TActionIterator        m_pCurrentAction;
+	PRIV_DECL       bool                            m_sequentialActions;
+	PRIV_DECL       int                             m_delayFrameCount;
+	PRIV_DECL       bool                            m_waitingForAction;
+
+	PRIV_DECL		CCandidateSet                   m_candidateSet;
+	PRIV_DECL		set<CCandidate>                 m_instigatorSet;
+
+	PRIV_DECL		CPoint3D                        m_firePosition;
+	PRIV_DECL		double                           m_radius;
+}
+
+CREATE_CB GmtrcPstnTriggerCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB GmtrcPstnTriggerDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION GmtrcPstnTriggerPreActivity
+CODE
+	UserActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION GmtrcPstnTriggerPostActivity
+CODE
+	;
+&&&&ENDCODE
+
+STATE_MACHINE TrffcLghtTrigger {
+	CREATE_CB		TrffcLghtTriggerCreate
+	DELETE_CB		TrffcLghtTriggerDelete
+	PRE_ACTIVITY	TrffcLghtTriggerPreActivity
+	POST_ACTIVITY	TrffcLghtTriggerPostActivity
+	BUTTONS			(FireTrigger, Fire_trigger)
+
+	PRIV_DECL       void UserCreation( const CTriggerParseBlock* );
+	PRIV_DECL       void UserActivity( const CTriggerParseBlock* );
+	PRIV_DECL       void UserDeletion( const CTriggerParseBlock* );
+	PRIV_DECL		void InitCandidates( const CTriggerParseBlock* );
+	PRIV_DECL		bool Evaluate( void );
+	PRIV_DECL		void ExecuteConcurrentActions();
+	PRIV_DECL       void InitializeSequentialActions();
+	PRIV_DECL		void ExecuteSequentialActions();
+
+	PRIV_DECL		CObjectInitCond                 m_initCondition;
+	PRIV_DECL		CTriggerFireCond                m_fireCondition;
+	PRIV_DECL		CPoint3D                        m_prevPosition;
+	PRIV_DECL		EInitCond                       m_prevState;
+	PRIV_DECL		CVED::CCoordinatorObjectObj*    m_pTrigger;
+
+	PRIV_DECL		CAction::TActionVec             m_pActionVector;
+	PRIV_DECL       CAction::TActionIterator        m_pCurrentAction;
+	PRIV_DECL       bool                            m_sequentialActions;
+	PRIV_DECL       int                             m_delayFrameCount;
+	PRIV_DECL       bool                            m_waitingForAction;
+
+	PRIV_DECL		CCandidateSet                   m_candidateSet;
+	PRIV_DECL		set<CCandidate>                 m_instigatorSet;
+	PRIV_DECL		vector<string>                  m_byNameSet;
+
+	PRIV_DECL		eCVTrafficLightState            m_state;
+}
+
+CREATE_CB TrffcLghtTriggerCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB TrffcLghtTriggerDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION TrffcLghtTriggerPreActivity
+CODE
+	UserActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION TrffcLghtTriggerPostActivity
+CODE
+	;
+&&&&ENDCODE
+
+STATE_MACHINE RoadPadTrigger {
+	CREATE_CB		RoadPadTriggerCreate
+	DELETE_CB		RoadPadTriggerDelete
+	PRE_ACTIVITY	RoadPadTriggerPreActivity
+	POST_ACTIVITY	RoadPadTriggerPostActivity
+	BUTTONS			(FireTrigger, Fire_trigger)
+
+	PRIV_DECL       void UserCreation( const CTriggerParseBlock* );
+	PRIV_DECL       void UserActivity( const CTriggerParseBlock* );
+	PRIV_DECL       void UserDeletion( const CTriggerParseBlock* );
+	PRIV_DECL		void InitCandidates( const CTriggerParseBlock* );
+	PRIV_DECL		bool Evaluate( void );
+	PRIV_DECL		void ExecuteConcurrentActions();
+	PRIV_DECL       void InitializeSequentialActions();
+	PRIV_DECL		void ExecuteSequentialActions();
+	PRIV_DECL       void SetTriggerFireLog( CAction::TActionIterator& aI );
+
+	PRIV_DECL		CObjectInitCond                 m_initCondition;
+	PRIV_DECL		CTriggerFireCond                m_fireCondition;
+	PRIV_DECL		CPoint3D                        m_prevPosition;
+	PRIV_DECL		EInitCond                       m_prevState;
+	PRIV_DECL		CVED::CCoordinatorObjectObj*    m_pTrigger;
+
+	PRIV_DECL		CAction::TActionVec             m_pActionVector;
+	PRIV_DECL       CAction::TActionIterator        m_pCurrentAction;
+	PRIV_DECL       bool                            m_sequentialActions;
+	PRIV_DECL       int                             m_delayFrameCount;
+	PRIV_DECL       bool                            m_waitingForAction;
+
+	PRIV_DECL		CCandidateSet                   m_candidateSet;
+	PRIV_DECL		set<CCandidate>                 m_instigatorSet;
+
+	PRIV_DECL		CPath                           m_path;
+	PRIV_DECL		int                             m_nthFromStart;
+	PRIV_DECL		int                             m_nthFromEnd;
+	PRIV_DECL		int                             m_nAhead;
+	PRIV_DECL		int                             m_nBehind;
+
+	PRIV_DECL       bool                            m_debug;
+}
+
+CREATE_CB RoadPadTriggerCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB RoadPadTriggerDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION RoadPadTriggerPreActivity
+CODE
+	UserActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION RoadPadTriggerPostActivity
+CODE
+	;
+&&&&ENDCODE
+
+STATE_MACHINE ExpressionTrigger {
+	CREATE_CB		ExpressionTriggerCreate
+	DELETE_CB		ExpressionTriggerDelete
+	PRE_ACTIVITY	ExpressionTriggerPreActivity
+	POST_ACTIVITY	ExpressionTriggerPostActivity
+	BUTTONS			(FireTrigger, Fire_trigger)
+
+	PRIV_DECL       void UserCreation( const CTriggerParseBlock* );
+	PRIV_DECL       void UserActivity( const CTriggerParseBlock* );
+	PRIV_DECL       void UserDeletion( const CTriggerParseBlock* );
+	PRIV_DECL		void InitCandidates( const CTriggerParseBlock* );
+	PRIV_DECL		bool Evaluate( void );
+	PRIV_DECL		void ExecuteConcurrentActions();
+	PRIV_DECL       void InitializeSequentialActions();
+	PRIV_DECL		void ExecuteSequentialActions();
+	PRIV_DECL       void SetTriggerFireLog( CAction::TActionIterator& aI );
+
+	PRIV_DECL		CObjectInitCond                 m_initCondition;
+	PRIV_DECL		CTriggerFireCond                m_fireCondition;
+	PRIV_DECL		CPoint3D                        m_prevPosition;
+	PRIV_DECL		EInitCond                       m_prevState;
+	PRIV_DECL		CVED::CCoordinatorObjectObj*    m_pTrigger;
+
+	PRIV_DECL		CAction::TActionVec             m_pActionVector;
+	PRIV_DECL       CAction::TActionIterator        m_pCurrentAction;
+	PRIV_DECL       bool                            m_sequentialActions;
+	PRIV_DECL       int                             m_delayFrameCount;
+	PRIV_DECL       bool                            m_waitingForAction;
+
+	PRIV_DECL		CCandidateSet                   m_candidateSet;
+	PRIV_DECL		set<CCandidate>                 m_instigatorSet;
+
+	PRIV_DECL       CExpEval                        m_expEval;
+	PRIV_DECL		string                          m_expression;
+	PRIV_DECL       string                          m_parsedExpression;
+
+	PRIV_DECL		int                             m_nthFromStart;
+	PRIV_DECL		int                             m_nthFromEnd;
+	PRIV_DECL		int                             m_nAhead;
+	PRIV_DECL		int                             m_nBehind;
+
+	PRIV_DECL       bool                            m_debug;
+}
+
+CREATE_CB ExpressionTriggerCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB ExpressionTriggerDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION ExpressionTriggerPreActivity
+CODE
+	UserActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION ExpressionTriggerPostActivity
+CODE
+	;
+&&&&ENDCODE
+
+STATE_MACHINE FollowTrigger {
+	CREATE_CB		FollowTriggerCreate
+	DELETE_CB		FollowTriggerDelete
+	PRE_ACTIVITY	FollowTriggerPreActivity
+	POST_ACTIVITY	FollowTriggerPostActivity
+	BUTTONS			(FireTrigger, Fire_trigger)
+
+	PRIV_DECL       void UserCreation( const CTriggerParseBlock* );
+	PRIV_DECL       void UserActivity( const CTriggerParseBlock* );
+	PRIV_DECL       void UserDeletion( const CTriggerParseBlock* );
+	PRIV_DECL		void InitCandidates( const CTriggerParseBlock* );
+	PRIV_DECL		bool Evaluate( void );
+	PRIV_DECL		void ExecuteConcurrentActions();
+	PRIV_DECL       void InitializeSequentialActions();
+	PRIV_DECL		void ExecuteSequentialActions();	
+
+	PRIV_DECL		CObjectInitCond                 m_initCondition;
+	PRIV_DECL		CTriggerFireCond                m_fireCondition;
+	PRIV_DECL		CPoint3D                        m_prevPosition;
+	PRIV_DECL		EInitCond                       m_prevState;
+	PRIV_DECL		CVED::CCoordinatorObjectObj*    m_pTrigger;
+
+	PRIV_DECL		CAction::TActionVec             m_pActionVector;
+	PRIV_DECL       CAction::TActionIterator        m_pCurrentAction;
+	PRIV_DECL       bool                            m_sequentialActions;
+	PRIV_DECL       int                             m_delayFrameCount;
+	PRIV_DECL       bool                            m_waitingForAction;
+
+	PRIV_DECL		CCandidateSet                   m_candidateSet;
+	PRIV_DECL		set<CCandidate>                 m_instigatorSet;
+
+	PRIV_DECL		CPath                           m_path;
+
+	PRIV_DECL       CTriggerParseBlock::TFollowInfo m_leaderInfo;
+	PRIV_DECL       CTriggerParseBlock::TFollowInfo m_followerInfo;
+
+	PRIV_DECL       bool                             m_isExpression;
+	PRIV_DECL       bool                             m_isFollowTime;
+	PRIV_DECL       double                           m_followTime;
+	PRIV_DECL       double                           m_followDist;
+	PRIV_DECL       double                           m_toleranceMinus;
+	PRIV_DECL       double                           m_tolerancePlus;
+	PRIV_DECL       double                           m_minDuration;
+	PRIV_DECL       double                           m_percentSpeedMatch;
+	PRIV_DECL       int                              m_framesInRange;
+	PRIV_DECL       bool                             m_requireSameLane;
+	PRIV_DECL       std::string                      m_expression;
+	PRIV_DECL       CExpEval                         m_exprEval;
+}
+
+CREATE_CB FollowTriggerCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB FollowTriggerDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION FollowTriggerPreActivity
+CODE
+	UserActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION FollowTriggerPostActivity
+CODE
+	;
+&&&&ENDCODE
+
+STATE_MACHINE TimeToArrvlTrigger {
+	CREATE_CB		TimeToArrvlTriggerCreate
+	DELETE_CB		TimeToArrvlTriggerDelete
+	PRE_ACTIVITY	TimeToArrvlTriggerPreActivity
+	POST_ACTIVITY	TimeToArrvlTriggerPostActivity
+	BUTTONS			(FireTrigger, Fire_trigger)
+
+	PRIV_DECL       void UserCreation( const CTriggerParseBlock* );
+	PRIV_DECL       void UserActivity( const CTriggerParseBlock* );
+	PRIV_DECL       void UserDeletion( const CTriggerParseBlock* );
+	PRIV_DECL		void InitCandidates( const CTriggerParseBlock* );
+	PRIV_DECL		bool Evaluate( void );
+	PRIV_DECL		void ExecuteConcurrentActions();
+	PRIV_DECL       void InitializeSequentialActions();
+	PRIV_DECL		void ExecuteSequentialActions();
+
+	PRIV_DECL		double GetTimeToArrival(const CCandidate&, const CPoint3D&);
+	PRIV_DECL		double MySin( int argC, const CExprParser::CStrNum args[] );
+	PRIV_DECL		double MyCos( int argC, const CExprParser::CStrNum args[] );
+	PRIV_DECL		double ReadCell( int argC, const CExprParser::CStrNum args[] );
+	PRIV_DECL		double CellEquals( int argC, const CExprParser::CStrNum args[] );
+	PRIV_DECL		double ReadVar( int argC, const CExprParser::CStrNum args[] );
+	PRIV_DECL		double GetObjVel( int argC, const CExprParser::CStrNum args[] );
+	PRIV_DECL		double GetObjTtcToOv( int argC, const CExprParser::CStrNum args[] );
+	PRIV_DECL		double GetOvTtcToObj( int argC, const CExprParser::CStrNum args[] );
+	PRIV_DECL		double GetObjDistPow( int argC, const CExprParser::CStrNum args[] );
+	PRIV_DECL		double MyAbs( int argC, const CExprParser::CStrNum args[] );
+	PRIV_DECL		double GetDistToTarg( int argC, const CExprParser::CStrNum args[] );
+	
+
+	PRIV_DECL		CObjectInitCond                 m_initCondition;
+	PRIV_DECL		CTriggerFireCond                m_fireCondition;
+	PRIV_DECL		CPoint3D                        m_prevPosition;
+	PRIV_DECL		EInitCond                       m_prevState;
+	PRIV_DECL		CVED::CCoordinatorObjectObj*    m_pTrigger;
+
+	PRIV_DECL		CAction::TActionVec             m_pActionVector;
+	PRIV_DECL       CAction::TActionIterator        m_pCurrentAction;
+	PRIV_DECL       bool                            m_sequentialActions;
+	PRIV_DECL       int                             m_delayFrameCount;
+	PRIV_DECL       bool                            m_waitingForAction;
+
+	PRIV_DECL		CCandidateSet                   m_candidateSet;
+	PRIV_DECL		set<CCandidate>                 m_instigatorSet;
+
+	PRIV_DECL		CPath                           m_path;
+	PRIV_DECL		CPoint3D                        m_firePosition;
+	PRIV_DECL		double                          m_time;
+	PRIV_DECL		bool                            m_secondOrder;
+	PRIV_DECL       double                          m_boundSpeed;
+    PRIV_DECL       CExpEvalTTA                     m_expEval;
+    PRIV_DECL		string                          m_expression;
+    PRIV_DECL		CCandidate						m_currCandidate;
+    PRIV_DECL		int								m_activationTime;
+    PRIV_DECL		double							m_currTimeToArrival;
+    PRIV_DECL		bool							m_logTTA;
+    PRIV_DECL		int  							m_logTTANum;
+    	
+}
+
+CREATE_CB TimeToArrvlTriggerCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB TimeToArrvlTriggerDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION TimeToArrvlTriggerPreActivity
+CODE
+	UserActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION TimeToArrvlTriggerPostActivity
+CODE
+	;
+&&&&ENDCODE

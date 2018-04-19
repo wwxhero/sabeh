@@ -1,0 +1,54 @@
+STATE_MACHINE TrafficSource {
+	CREATE_CB       TrafficSourceCreate
+	DELETE_CB       TrafficSourceDelete
+	PRE_ACTIVITY    TrafficSourcePreActivity
+	POST_ACTIVITY	TrafficSourcePostActivity
+	PRIV_DECL       void UserCreation( const CTrafSrcParseBlock* );
+	PRIV_DECL       void UserActivity( const CTrafSrcParseBlock* );
+	PRIV_DECL       void UserDeletion( const CTrafSrcParseBlock* );
+
+	PRIV_DECL		void MakeTraffic( void );
+	PRIV_DECL		bool TimeToMakeTraffic( int );
+
+	PRIV_DECL		CObjectInitCond	m_initCondition;
+	PRIV_DECL		int m_startFrame;
+	PRIV_DECL		int m_curTimeIdx;
+	PRIV_DECL		double m_randTime;
+	PRIV_DECL		vector<CSnoBlock> m_traffic;
+	PRIV_DECL		vector<double> m_times;
+	PRIV_DECL		vector<double> m_periodicSequence;
+	PRIV_DECL		vector<double> m_workingSequence;
+	PRIV_DECL		bool	m_randomSequence;
+	PRIV_DECL		bool	m_isRandomUniform;
+	PRIV_DECL		int m_curSequenceIdx;
+	PRIV_DECL		int m_curSequenceCount;
+
+	PRIV_DECL		CRandNumGen m_rng;
+	PRIV_DECL		int m_rngTime;
+	PRIV_DECL		int m_rngTraffic;
+	PRIV_DECL		CVED::CCoordinatorObjectObj*    m_pTraffSource;
+
+	BUTTONS			(MakeTraffic, Make_traffic)
+	DIALS			(StartStop, bool, Start_Stop)
+	DIAL_INFO       (StartStop, 0, Stop, bool, bool, 0,StartStop)
+}
+
+CREATE_CB TrafficSourceCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB TrafficSourceDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION TrafficSourcePreActivity
+CODE
+	UserActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION TrafficSourcePostActivity
+CODE
+;
+&&&&ENDCODE

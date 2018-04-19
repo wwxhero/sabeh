@@ -1,0 +1,41 @@
+STATE_MACHINE TrafficLightManager {
+	CREATE_CB       TrafficLightManagerCreate
+	DELETE_CB       TrafficLightManagerDelete
+	PRE_ACTIVITY    TrafficLightManagerPreActivity
+	POST_ACTIVITY   TrafficLightManagerPostActivity
+
+	PRIV_DECL       void UserCreation( const CTrafLghtMngrParseBlock* );
+	PRIV_DECL       void UserPreActivity( const CTrafLghtMngrParseBlock* );
+	PRIV_DECL       void UserPostActivity( const CTrafLghtMngrParseBlock* );
+	PRIV_DECL       void UserDeletion( const CTrafLghtMngrParseBlock* );
+
+	PRIV_DECL		void MakeStringUpper( string& s );
+	PRIV_DECL		void ParseDialString( const string&, string&, string&, double* );
+
+	PRIV_DECL		vector<CClg>     m_clgs;
+
+	DIALS			(TrafficLight, string, Traffic_Light)
+	DIAL_INFO       (TrafficLight, 0, Name, string, string, name, Signal_Name)
+	DIAL_INFO       (TrafficLight, 0, Singal, string, string, signal, Signal)
+	DIAL_INFO       (TrafficLight, 1, Duration, int, seconds, 2, How_long_to_keep_this_condition)	
+}
+
+CREATE_CB TrafficLightManagerCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB TrafficLightManagerDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION TrafficLightManagerPreActivity
+CODE
+	UserPreActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION TrafficLightManagerPostActivity
+CODE
+	UserPostActivity( pSnoBlock );
+&&&&ENDCODE

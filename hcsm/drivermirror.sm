@@ -1,0 +1,48 @@
+STATE_MACHINE DriverMirror {
+	CREATE_CB       DriverMirrorCreate
+	DELETE_CB       DriverMirrorDelete
+	PRE_ACTIVITY    DriverMirrorPreActivity
+	POST_ACTIVITY   DriverMirrorPostActivity
+
+	MONITOR         (RoadPos, CRoadPos)
+	MONITOR         (TrailerPos, CRoadPos)
+	MONITOR         (TargCrdr, CCrdr)
+	MONITOR         (StoppedBehindObj, int)
+	MONITOR         (ImTargCrdrs, string)
+
+	DIALS           (TargetVelocity, string, Change_Target_Velocity)
+
+	PRIV_DECL       void UserCreation();
+	PRIV_DECL       void UserPreActivity();
+	PRIV_DECL       void UserPostActivity();
+	PRIV_DECL       void UserDeletion();
+	PRIV_DECL       deque<int> m_signaledIntrsctns;
+	PRIV_DECL       bool ComputeTargCrdr( CCrdr& );
+	PRIV_DECL       long m_prevRoadPosFrame;
+	PRIV_DECL       bool m_registeredHcsmId;
+	PRIV_DECL       CRoadPos m_currRoadPos;
+	PRIV_DECL       CRoadPos m_prevRoadPos;
+	PRIV_DECL       long m_prevTrailerPosFrame;
+	PRIV_DECL       CRoadPos m_currTrailerPos;
+	PRIV_DECL       CCrdr m_prevTargCrdr;
+}
+
+CREATE_CB DriverMirrorCreate
+CODE
+	UserCreation();
+&&&&ENDCODE
+
+DELETE_CB DriverMirrorDelete
+CODE
+	UserDeletion();
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION DriverMirrorPreActivity
+CODE
+	UserPreActivity();
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION DriverMirrorPostActivity
+CODE
+	UserPostActivity();
+&&&&ENDCODE

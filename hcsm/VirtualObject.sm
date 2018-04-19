@@ -1,0 +1,89 @@
+STATE_MACHINE VirtualObject {
+	CREATE_CB       VirtualObjectCreate
+	DELETE_CB       VirtualObjectDelete
+	PRE_ACTIVITY    VirtualObjectPreActivity
+	POST_ACTIVITY   VirtualObjectPostActivity
+	BUTTONS         (TurnOnAnimation, Turn_On_Animation)
+	BUTTONS		    (TurnOffAnimation, Turn_Off_Animation)
+	DIALS			(SetAnimation,string)
+	DIALS			(SetRotation,float)
+	DIALS			(SetPosition,string)
+	DIALS			(SetStateIndex,string)
+	DIALS			(SetDrawType,int)
+	DIALS			(AttachToObject,string)
+	DIALS			(AttachToLight,int)
+
+
+	DIAL_INFO       (VisualState, 0, LightState, int, bits, 16, The_state_of_the_light)
+	DIAL_INFO       (VisualState, 1, Duration, int, seconds, 2, How_long_to_keep_light_state)
+	DIAL_INFO       (SetSize, 0, X, int, pixel, 1, GL)
+	DIAL_INFO       (SetSize, 1, Y, int, pixel, 1, GL)
+	DIAL_INFO       (SetColor, 0, Red, float, color, 1, GL)
+	DIAL_INFO       (SetColor, 1, Green, float, color, 1, GL)
+	DIAL_INFO       (SetColor, 2, Blue, float, color, 1, GL)
+	DIAL_INFO       (SetColor, 3, Alpha, float, color, 1, GL)		
+	DIAL_INFO       (Mode, 0, Mode, int, int, 0, Mode)
+
+	PRIV_DECL		CObjectInitCond  m_initCondition;
+	PRIV_DECL       void UserCreation( const CVirtualObjectParseBlock* );
+	PRIV_DECL       void UserActivity( const CVirtualObjectParseBlock* );
+	PRIV_DECL       void UserDeletion( const CVirtualObjectParseBlock* );
+	PRIV_DECL       void UserPostActivity( const CVirtualObjectParseBlock* );
+
+	PRIV_DECL       EInitCond m_lastState;
+	PRIV_DECL       CPoint3D m_last3DPos;
+
+	PRIV_DECL       CPoint3D m_referencePoint;
+	PRIV_DECL       CPoint3D m_OverLayPosition;
+	PRIV_DECL		CPoint3D m_rotation;
+	PRIV_DECL		CPoint2D m_size;
+	PRIV_DECL		int m_drawType;
+	PRIV_DECL		int m_drawScreen;
+	PRIV_DECL		int m_stateIndex;
+	PRIV_DECL		float m_initBoarderColor[4];
+	PRIV_DECL		float m_initFillColor[4]; 
+	PRIV_DECL		int	m_startAnimationFrame;
+	PRIV_DECL		int m_periodFrames;
+	PRIV_DECL		int m_flashOnFrames;
+	PRIV_DECL       CObjectInitCond m_initConditions;
+	
+	PRIV_DECL       string m_parentName;
+	PRIV_DECL       bool m_isAnimationOn;
+	PRIV_DECL		bool m_isBlinking;
+	PRIV_DECL		bool m_isMoving;
+	PRIV_DECL		bool m_isRotating;
+	
+	PRIV_DECL		float m_rotateRate;
+	PRIV_DECL		float m_degreesPerSec;
+	PRIV_DECL		CPoint3D m_targetPos;
+	PRIV_DECL		float m_unitsPerSecMov;
+
+	PRIV_DECL       CRoadPos m_currRoadPos;
+	PRIV_DECL		CVED::CVisualObjectObj*    m_pVisualObject;
+	PRIV_DECL		void HandleDials( void );
+
+	PRIV_DECL		void SetBoarderColor(float,float,float,float);
+	PRIV_DECL		void SetDrawPosition(float,float,float);
+	PRIV_DECL		void SetRoatation(float,float,float);
+	PRIV_DECL		void SetColor(float,float,float,float);
+}
+
+CREATE_CB VirtualObjectCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB VirtualObjectDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION VirtualObjectPreActivity
+CODE
+	UserActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION VirtualObjectPostActivity
+CODE
+	UserPostActivity( pSnoBlock );
+&&&&ENDCODE

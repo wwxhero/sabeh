@@ -1,0 +1,30 @@
+STATE_MACHINE OwnVehicleMirror {
+	CREATE_CB       OwnVehicleMirrorCreate
+	DELETE_CB       OwnVehicleMirrorDelete
+	PRE_ACTIVITY    OwnVehicleMirrorPreActivity
+	POST_ACTIVITY   OwnVehicleMirrorPostActivity
+	PRIV_DECL       void UserCreation( const COwnVehicleMirrorParseBlock* );
+	PRIV_DECL       void UserPreActivity( const COwnVehicleMirrorParseBlock* );
+	PRIV_DECL       void UserPostActivity( const COwnVehicleMirrorParseBlock* );
+	PRIV_DECL       void UserDeletion( const COwnVehicleMirrorParseBlock* );
+}
+
+CREATE_CB OwnVehicleMirrorCreate
+CODE
+	UserCreation( pSnoBlock );
+&&&&ENDCODE
+
+DELETE_CB OwnVehicleMirrorDelete
+CODE
+	UserDeletion( pSnoBlock );
+&&&&ENDCODE
+
+PRE_ACTIVITY_FUNCTION OwnVehicleMirrorPreActivity
+CODE
+	UserPreActivity( pSnoBlock );
+&&&&ENDCODE
+
+POST_ACTIVITY_FUNCTION OwnVehicleMirrorPostActivity
+CODE
+	UserPostActivity( pSnoBlock );
+&&&&ENDCODE
