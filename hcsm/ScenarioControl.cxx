@@ -17,6 +17,7 @@
 #include <sstream>
 #include "EnvVar.h"
 #include "LibExternalObjectIfNetwork.h"
+#include "CvedEDOCtrl.h"
 //#include "cvedstrc.h"
 #define _DIFF_DISTRI_SCENE
 
@@ -118,7 +119,7 @@ void
 CScenarioControl::ExecDynamics()
 {
 	assert( m_pCved );
-	m_pCved->ExecuteDynamicModels(m_pExternalObjCtrl);
+	m_pCved->ExecuteDynamicModels();
 }
 
 
@@ -846,7 +847,7 @@ void CScenarioControl::SetRehearsalChangeLaneLeftExternalDriver(){
 //
 //////////////////////////////////////////////////////////////////////////////
 
-bool CScenarioControl::InitDistriSimulation( bool simulateOwnVeh )
+bool CScenarioControl::InitDistriEDOCtrlSim( bool simulateOwnVeh )
 {
 	if( m_pExternalObjCtrl ) ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
 	m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK);
@@ -875,7 +876,7 @@ bool CScenarioControl::InitDistriSimulation( bool simulateOwnVeh )
 		m_pHdrBlk = new CHeaderDistriParseBlock( *pBlock );
 
 		if( m_pCved ) delete m_pCved;
-		m_pCved = new CCved();
+		m_pCved = new CCvedEDOCtrl(m_pExternalObjCtrl);
 		m_pCved->Configure( CCved::eCV_SINGLE_USER, m_behavDeltaT, m_dynaMult );
 		string cvedErr;
 		bool success = m_pCved->Init( m_pHdrBlk->GetLriFile(), cvedErr );
@@ -898,7 +899,7 @@ bool CScenarioControl::InitDistriSimulation( bool simulateOwnVeh )
 	return initialized;
 }
 
-bool CScenarioControl::InitDistriSimulation(const char* filePath, bool simulateOwnVeh)
+bool CScenarioControl::InitDistriEDOCtrlSim(const char* filePath, bool simulateOwnVeh)
 {
 	if( m_pExternalObjCtrl ) ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
 	m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK);
@@ -970,7 +971,7 @@ bool CScenarioControl::InitDistriSimulation(const char* filePath, bool simulateO
 
 
 		if( m_pCved ) delete m_pCved;
-		m_pCved = new CCved();
+		m_pCved = new CCvedEDOCtrl(m_pExternalObjCtrl);
 		m_pCved->Configure( CCved::eCV_SINGLE_USER, m_behavDeltaT, m_dynaMult );
 		string cvedErr;
 		bool success = m_pCved->Init( m_pHdrBlk->GetLriFile(), cvedErr );
@@ -1783,7 +1784,7 @@ int CScenarioControl::UpdateCollisionObjList(
 					"***** collision with obj %d %s (cved type = '%s') collisionCount = %d\n",
 					*iitr,
 					m_pCved->GetObjName(*iitr),
-					cvObjType2String( (cvEObjType) (m_pCved->GetObjType(*iitr, true)) ),
+					cvObjType2String( (cvEObjType) (m_pCved->GetObjType(*iitr)) ),
 					m_sCollisionCount+newCollisions
 					);
 			}
@@ -1955,7 +1956,7 @@ CScenarioControl::DetectCollisionsWithOwnship( void )
 	for ( i=0; i<m_sCollisionListSize; ++i )
 	{
 		cvedId = m_sCollisionCvedObjId[i];
-		objType = m_pCved->GetObjType( cvedId, true );
+		objType = m_pCved->GetObjType( cvedId);
 #ifdef COLLISION_WITH_TERRAIN
 		if ( objType == eCV_TERRAIN )
 		{
@@ -2308,7 +2309,7 @@ CScenarioControl::ComputeDynObjData( const CPoint3D& cOwnVehCartPos )
 		int cvedId = objData[cntr].cvedId;
 		const CObj* pDynObj = m_pCved->BindObjIdToClass( cvedId );
 		if( !pDynObj )  continue;
-		cvEObjType objType = m_pCved->GetObjType( cvedId, true);
+		cvEObjType objType = m_pCved->GetObjType( cvedId);
 
 		objPos = pDynObj->GetPosImm();
 

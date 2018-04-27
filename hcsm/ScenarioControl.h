@@ -50,8 +50,8 @@ public:
 	void SetDefaults( float behavDelta, int dynaMult, int verbose );
 	const char* GetLastErrorString( void ) const;
 
-	bool InitDistriSimulation( bool simulateOwnVeh );
-	bool InitDistriSimulation(const char*, bool simulateOwnVeh);
+	bool InitDistriEDOCtrlSim( bool simulateOwnVeh );
+	bool InitDistriEDOCtrlSim(const char*, bool simulateOwnVeh);
 	bool InitSimulation( const char*, bool simulateOwnVeh, bool isFile = true );
 	void TerminateSimulation( void );
 	bool GetDriverInitState( double ipos[3], double& heading );
