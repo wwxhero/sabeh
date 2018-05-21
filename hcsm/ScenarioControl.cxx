@@ -886,7 +886,7 @@ bool CScenarioControl::InitDistriEDOCtrlSim( bool simulateOwnVeh )
 			return !(m_haveError=true);
 		}
 
-		initialized = m_pExternalObjCtrl->Initialize(static_cast<CHeaderDistriParseBlock&>(*m_pHdrBlk), m_pCved) //the configuration for localhost simulator will be identified
+		initialized = m_pExternalObjCtrl->Initialize(static_cast<CHeaderDistriParseBlock&>(*m_pHdrBlk), static_cast<CVED::CCvedDistri*>(m_pCved)) //the configuration for localhost simulator will be identified
 					&& InitSimulation(parser, simulateOwnVeh);
 	}
 
@@ -980,7 +980,7 @@ bool CScenarioControl::InitDistriEDOCtrlSim(const char* filePath, bool simulateO
 			sprintf_s( m_lastError, sizeof(m_lastError),"Cved::Init failed: %s", cvedErr.c_str() );
 			return !(m_haveError=true);
 		}
-		initialized = m_pExternalObjCtrl->Initialize(static_cast<CHeaderDistriParseBlock&>(*m_pHdrBlk), m_pCved) //the configuration for localhost simulator will be identified
+		initialized = m_pExternalObjCtrl->Initialize(static_cast<CHeaderDistriParseBlock&>(*m_pHdrBlk), static_cast<CVED::CCvedDistri*>(m_pCved)) //the configuration for localhost simulator will be identified
 					&& InitSimulation(parser, simulateOwnVeh);
 	}
 
@@ -1416,7 +1416,7 @@ CScenarioControl::TerminateSimulation( void )
 
 	if( m_pExternalObjCtrl )
 	{
-		m_pExternalObjCtrl->UnInitialize(m_pCved);
+		m_pExternalObjCtrl->UnInitialize();
 		ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
 		m_pExternalObjCtrl = 0;
 	}
