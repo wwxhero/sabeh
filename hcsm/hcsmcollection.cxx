@@ -183,20 +183,20 @@ bool CHcsmCollection::m_sLCW_IsOn = false;
 bool CHcsmCollection::m_sBLS_IsOn = false;
 bool CHcsmCollection::m_sFCW_IsOn = false;
 
-bool CHcsmCollection::m_sIsOnPath = false; 
+bool CHcsmCollection::m_sIsOnPath = false;
 CVED::CPath CHcsmCollection::m_sOwnshipPath;
 
 ELdwStatus CHcsmCollection::m_sLdwStatus = eLDW_NONE;
 EBswStatus CHcsmCollection::m_sBswStatus = eBSW_NONE;
 EFcwStatus CHcsmCollection::m_sFcwStatus = eFCW_NONE;
-float CHcsmCollection::m_sBackUpDistance = 35.0; //< current back up distance in feet 
+float CHcsmCollection::m_sBackUpDistance = 35.0; //< current back up distance in feet
 
 bool                                   CHcsmCollection::m_sHapticSeat_IsEnabled = 0; //< whether haptic seat is enabled
 CHcsmCollection::eFlashingLightMode    CHcsmCollection::m_sFlashingLightMode = CHcsmCollection::eNO_LIGHTS; //< flashing lights
 CHcsmCollection::eBUDCameraDisplayMode CHcsmCollection::m_sBUDCameraDisplayMode = CHcsmCollection::eNO_DISPLAY; //< backup camera display and distance bar
 
-float CHcsmCollection::m_sBUDBarWarnLowDist = 30.0;  //< the backup distance in feet at which the distance bar starts to grow 
-float CHcsmCollection::m_sBUDBarWarnHighDist = 1.0; //< the backup distance at which the distance bar reaches maximum warning level 
+float CHcsmCollection::m_sBUDBarWarnLowDist = 30.0;  //< the backup distance in feet at which the distance bar starts to grow
+float CHcsmCollection::m_sBUDBarWarnHighDist = 1.0; //< the backup distance at which the distance bar reaches maximum warning level
 bool  CHcsmCollection::m_sBSWCamera_IsEnabled  = 0; //< whether blind spot warning camera is enabled
 bool  CHcsmCollection::m_sIPAlert_IsEnabled	 = 0; //< whether alert icons in instrument panel is enabled
 
@@ -218,8 +218,8 @@ RTEX::SubsysBase* CHcsmCollection::m_spRTEX = NULL;
 float CHcsmCollection::m_sSirenEffect = 0;
 float CHcsmCollection::m_sSirenSpeed = -1;
 
-short CHcsmCollection::m_sACC_Warning = 0; 	
-short CHcsmCollection::m_sCruise_State= 0; 	
+short CHcsmCollection::m_sACC_Warning = 0;
+short CHcsmCollection::m_sCruise_State= 0;
 float CHcsmCollection::m_sCruise_SetSpeed = 0;
 float CHcsmCollection::m_sACC_Gap = 0;
 short CHcsmCollection::m_sALF_State = 0;
@@ -245,9 +245,9 @@ float CHcsmCollection::m_sOwnVehicleSpeed = 55;
 ///\todo replace sscanf
 //////////////////////////////////////////////////////////////////////////////
 
-CHcsmCollection::CHcsmCollection( 
-			const double timeStepDuration, 
-			CCved* pCved 
+CHcsmCollection::CHcsmCollection(
+			const double timeStepDuration,
+			CCved* pCved
 			)
 {
 	m_numHcsm = 0;
@@ -257,7 +257,7 @@ CHcsmCollection::CHcsmCollection(
 	// list of free/blank entries in the root HCSM array.
 	//
 	int i;
-	for( i = 0; i < cMAX_ROOT_HCSM; i++ ) 
+	for( i = 0; i < cMAX_ROOT_HCSM; i++ )
 	{
 		m_hcsmInstances[i] = NULL;
 		m_freeList.push_front(i);
@@ -278,21 +278,21 @@ CHcsmCollection::CHcsmCollection(
 		cerr << "CHcsmCollection::memory log is currently disabled" << endl;
 	}
 	m_memLog.ClearLog();
-	
+
 	string strEx;
     NADS::GetEnvVar(strEx,"MEMLOGEXCLUDE" );
-	if( strEx.size() > 0 ) 
+	if( strEx.size() > 0 )
 	{
 		int n1, n2;
 		stringstream ss;
         ss<<strEx;
         ss>>n1>>n2;
-        if( ss.fail() ) 
+        if( ss.fail() )
 		{
 			m_memLog.Exclude( n1, n2 );
 			fprintf(stderr, "** Note: memlog excluding range %d-%d\n", n1, n2);
 		}
-		else 
+		else
 		{
 			fprintf(stderr, " ** Warning: MEMLOGEXCLUDE set but incorrectly\n");
 		}
@@ -324,19 +324,19 @@ CHcsmCollection::CHcsmCollection(
 	{
 		CHcsmCollection::m_sSCC_DataRed_Segments[i] = 0;
 	}
-	memset( 
-		CHcsmCollection::m_sSCC_DataRed_Params, 
-		0, 
-		cNUM_DATARED_PARAMS_SIZE 
+	memset(
+		CHcsmCollection::m_sSCC_DataRed_Params,
+		0,
+		cNUM_DATARED_PARAMS_SIZE
 		);
 
 	// Initialize brake and tire conditions.
 	int cnt;
-	for( cnt = 0; cnt < cBRAKE_COND_SIZE; cnt++ )	
+	for( cnt = 0; cnt < cBRAKE_COND_SIZE; cnt++ )
 	{
 		CHcsmCollection::m_sBrakeCond[cnt] = 0;
 	}
-	for( cnt = 0; cnt < cTIRE_COND_SIZE; cnt++ )	
+	for( cnt = 0; cnt < cTIRE_COND_SIZE; cnt++ )
 	{
 		CHcsmCollection::m_sTireCond[cnt] = 0;
 	}
@@ -387,7 +387,7 @@ CHcsmCollection::CHcsmCollection(
     m_randomGenerators.clear();
     m_randomGenerators[cDefault] = shared_ptr<mt19937>(new std::mt19937(std::random_device()));
 	m_exprPosVariables.clear();
-	
+
 	m_sVisualDisplayText.clear();
 	m_sPlayAudioText.clear();
 	m_sVisualSettings.clear();
@@ -443,9 +443,9 @@ CHcsmCollection::~CHcsmCollection()
 		m_memLog.FormatedFileDump( pF, HLOG_EXECALL_START, false );
 		fclose( pF );
 	}
-	
 
-	if( m_numHcsm != 0 ) 
+
+	if( m_numHcsm != 0 )
 	{
 		cerr << MyName() << "::~CHcsmCollection: Hcsms not cleaned up!!";
 		cerr << endl;
@@ -454,21 +454,21 @@ CHcsmCollection::~CHcsmCollection()
 	//
 	// Write activity log to a file.
 	//
-	if( m_logActivities )  
+	if( m_logActivities )
 	{
 		//
-		// Build the activity log file name.  It should be written to 
-		// bin directory(where other logs exist) and the name should be 
+		// Build the activity log file name.  It should be written to
+		// bin directory(where other logs exist) and the name should be
 		// composed of the run instance name and a ".txt" suffix.
 		//
 		string actvLogFileName = GetActvLogFileName();
 #if 0
-		if( getenv( "NADSSDC_BIN" ) ) 
+		if( getenv( "NADSSDC_BIN" ) )
 		{
 			actvLogFileName = getenv( "NADSSDC_BIN" );
 			actvLogFileName += "\\";
 		}
-	
+
 		if( strlen( m_sRunInst ) > 0 )
 		{
 			actvLogFileName += "actvlog_";
@@ -513,12 +513,12 @@ CHcsmCollection::~CHcsmCollection()
 //
 //////////////////////////////////////////////////////////////////////////////
 CHcsm* CHcsmCollection::CreateHcsm(
-			const string cHcsmName,  
+			const string cHcsmName,
 			const CSnoBlock& cSnoBlock
 			)
 {
 
-	CHcsm* pHcsm;
+	CHcsm* pHcsm = NULL;
 
 	MemLog( 0, HLOG_CREATE_START, 0 );
 
@@ -526,13 +526,18 @@ CHcsm* CHcsmCollection::CreateHcsm(
 	// Try to create an instance of the class that represents
 	// the HCSM template.
 	//
-	try 
+	try
 	{
 		// find the type that matches the hcsm name string
+#if defined (EDO_CONTROLLER)
+		if (cHcsmName != "Ado")
+			pHcsm = GetClassFromTemplateName( cHcsmName, cSnoBlock );
+#else
 		pHcsm = GetClassFromTemplateName( cHcsmName, cSnoBlock );
+#endif
 		MemLog( 0, HLOG_CREATE_2, 0 );
 	}
-	catch ( cvCInternalError s ) 
+	catch ( cvCInternalError s )
 	{
 		// caught CVED exception
 		s.Notify();
@@ -540,7 +545,7 @@ CHcsm* CHcsmCollection::CreateHcsm(
 		gout << cHcsmName << " HCSM" << endl;
 		return NULL;
 	}
-	catch( cvCError s ) 
+	catch( cvCError s )
 	{
 		// caught CVED exception
 		MemLog( 0, HLOG_CREATE_3, 0 );
@@ -549,7 +554,7 @@ CHcsm* CHcsmCollection::CreateHcsm(
 		gout << cHcsmName << " HCSM.  Creation aborted." << endl;
 		return NULL;
 	}
-	catch( CSnoBlock::TCountError e ) 
+	catch( CSnoBlock::TCountError e )
 	{
 		// caught snoparser exception
 		MemLog( 0, HLOG_CREATE_4, 0 );
@@ -558,7 +563,7 @@ CHcsm* CHcsmCollection::CreateHcsm(
 		gout << "  " << e.msg << endl;
 		return NULL;
 	}
-	catch( ... ) 
+	catch( ... )
 	{
 		// caught unknown exception
 		MemLog( 0, HLOG_CREATE_5, 0 );
@@ -567,7 +572,7 @@ CHcsm* CHcsmCollection::CreateHcsm(
 		return NULL;
 	}
 
-	if( !pHcsm ) 
+	if( !pHcsm )
 	{
 		MemLog( 0, HLOG_CREATE_6, 0 );
 		// invalid Hcsm name
@@ -576,7 +581,7 @@ CHcsm* CHcsmCollection::CreateHcsm(
 	}
 
 	// first check to see if there are any free elements left
-	if( m_freeList.size() <= 0 ) 
+	if( m_freeList.size() <= 0 )
 	{
 		// root array is full!
 		MemLog( 0, HLOG_CREATE_7, 0 );
@@ -611,7 +616,7 @@ CHcsm* CHcsmCollection::CreateHcsm(
 //   Hcsms.
 //
 // Remarks:  This function processes all pending requests to activate newly
-//   created Hcsms.  The collection class calls this function at the end of 
+//   created Hcsms.  The collection class calls this function at the end of
 //   each frame to ensure consistency.
 //
 // Arguments:
@@ -628,7 +633,7 @@ void CHcsmCollection::ProcessHcsmCreate()
 	if( m_hcsmToCreate.size() > 0 )
 	{
 		set<CHcsm*>::iterator i;
-		for( i = m_hcsmToCreate.begin(); i != m_hcsmToCreate.end(); ++i ) 
+		for( i = m_hcsmToCreate.begin(); i != m_hcsmToCreate.end(); ++i )
 		{
 			//
 			// Activate the root HCSM and all its dependents.
@@ -647,24 +652,24 @@ void CHcsmCollection::ProcessHcsmCreate()
 	}
 
 	MemLog( 0, HLOG_PROCCREAT_END, 0 );
-}  // ProcessHcsmCreate 
+}  // ProcessHcsmCreate
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// Description:  Deletes a top-level or root HCSM instance given a pointer 
+// Description:  Deletes a top-level or root HCSM instance given a pointer
 //   to the instance.
 //
 // Remarks:  This function takes as input a pointer to a top-level or root
 //   HCSM instance.  If the pointer is invalid or points to an invalid Hcsm,
-//   it immediately returns false.  Otherwise, it queue's the Hcsm for 
-//   deletion at the end of the current frame and updates its data structures 
+//   it immediately returns false.  Otherwise, it queue's the Hcsm for
+//   deletion at the end of the current frame and updates its data structures
 //   to reflect that there is an extra open slot.
 //
 // Arguments:
 //   pHcsm - A pointer to the HCSM instance.
 //
-// Returns:  This function returns true if it is able to successfully 
-//   queue the root HCSM, pointed to by the input pointer, for deletion.  
+// Returns:  This function returns true if it is able to successfully
+//   queue the root HCSM, pointed to by the input pointer, for deletion.
 //   It returns false otherwise.
 //
 //////////////////////////////////////////////////////////////////////////////
@@ -673,7 +678,7 @@ bool CHcsmCollection::DeleteHcsm( CHcsm* pHcsm )
 	MemLog( 0, HLOG_DELHCSM_START, (char *)pHcsm->GetName().c_str() );
 
 	// is this a root Hcsm?
-	if( !pHcsm->IsRoot() ) 
+	if( !pHcsm->IsRoot() )
 	{
 		// input is not a root Hcsm
 		gout << MyName() << "::DeleteHcsm: Hcsm is not a root Hcsm!" << endl;
@@ -686,15 +691,15 @@ bool CHcsmCollection::DeleteHcsm( CHcsm* pHcsm )
 	//
 	map<CHcsm*, int>::iterator mapIterator;
 	mapIterator = m_hcsmMap.find( pHcsm );
-	if( mapIterator == m_hcsmMap.end() ) 
+	if( mapIterator == m_hcsmMap.end() )
 	{
-		// cannot find Hcsm in mapvc  
+		// cannot find Hcsm in mapvc
 		gout << MyName() << "::DeleteHcsm: Hcsm not found!" << endl;
 		MemLog( -2, HLOG_DELHCSM_END, 0 );
 		return false;
 	}
 
-	// 
+	//
 	// Add delete request to delete list.
 	//
 
@@ -720,7 +725,7 @@ bool CHcsmCollection::DeleteHcsm( CHcsm* pHcsm )
 //
 // Arguments:
 //
-// Returns:  
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void CHcsmCollection::DeleteAllHcsm()
@@ -731,7 +736,7 @@ void CHcsmCollection::DeleteAllHcsm()
 	// Cleanup all HCSMs.
 	//
 	int i;
-	for( i = 0; i < cMAX_ROOT_HCSM; i++ ) 
+	for( i = 0; i < cMAX_ROOT_HCSM; i++ )
 	{
 		if( m_hcsmInstances[i] )  DeleteHcsm( m_hcsmInstances[i] );
 	}
@@ -740,7 +745,7 @@ void CHcsmCollection::DeleteAllHcsm()
 
 	ProcessHcsmDelete();
 
-	if( m_numHcsm != 0 ) 
+	if( m_numHcsm != 0 )
 	{
 		gout << MyName() << "::DeleteAllHcsm: Hcsms not cleaned up!!";
 		gout << endl;
@@ -749,7 +754,7 @@ void CHcsmCollection::DeleteAllHcsm()
 	MemLog( 0, HLOG_DELALLHCSM_END, 0 );
 }  // DeleteAllHcsm
 
-	
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // Description:  Processes all pending requests to delete Hcsms.
@@ -773,11 +778,11 @@ void CHcsmCollection::ProcessHcsmDelete()
 	// THIS CHECK IS HERE BECAUSE THE CONCURRENT WILL CHOKE WITHOUT
 	// IT.  IT SHOULD NOT BE PERMANENT.
 	//
-	if( m_hcsmToDelete.size() > 0 ) 
+	if( m_hcsmToDelete.size() > 0 )
 	{
 
 		set<CHcsm*>::iterator i;
-		for( i = m_hcsmToDelete.begin(); i != m_hcsmToDelete.end(); ++i ) 
+		for( i = m_hcsmToDelete.begin(); i != m_hcsmToDelete.end(); ++i )
 		{
 			// get the pointer to the Hcsm to delete
 			CHcsm* pHcsm = *i;
@@ -785,7 +790,7 @@ void CHcsmCollection::ProcessHcsmDelete()
 			// find the entry in the map
 			map<CHcsm*, int>::iterator mapIterator;
 			mapIterator = m_hcsmMap.find( pHcsm );
-			if( mapIterator == m_hcsmMap.end() ) 
+			if( mapIterator == m_hcsmMap.end() )
 			{
 				// cannot find Hcsm in map
 				gout << MyName() << "::ProcessHcsmDelete: Hcsm not found!";
@@ -815,7 +820,7 @@ void CHcsmCollection::ProcessHcsmDelete()
 			{
 				delete pHcsm;
 			}
-			catch ( cvCInternalError s ) 
+			catch ( cvCInternalError s )
 			{
 				// caught CVED exception
 				s.Notify();
@@ -823,14 +828,14 @@ void CHcsmCollection::ProcessHcsmDelete()
 				gout << ": caught CVED cvCInternalError while deleting ";
 				gout << hcsmName << " HCSM" << endl;
 			}
-			catch( cvCError s ) 
+			catch( cvCError s )
 			{
 				// print error message
 				s.Notify();
 				gout << MyName() << ": caught CVED exception while ";
 				gout << "deleting " << hcsmName << " HCSM" << endl;
 			}
-			catch( ... ) 
+			catch( ... )
 			{
 				// print error message
 				gout << MyName() << ": caught unknown exception while ";
@@ -849,7 +854,7 @@ void CHcsmCollection::ProcessHcsmDelete()
 //
 // Description:  Sets the specifed dial of the given object.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   cCvedId - The CVED object whose dial should be set.
@@ -869,7 +874,7 @@ void CHcsmCollection::SetHcsmDial(
 	// Get a pointer to the CVED by the given id.
 	//
 	const CDynObj* pObj = m_pCved->BindObjIdToClass( cCvedId );
-	if( !pObj || !pObj->IsValid() ) 
+	if( !pObj || !pObj->IsValid() )
 	{
 		cerr << "SetHcsmDial: invalid cved id = " << cCvedId << endl;
 		return;
@@ -902,7 +907,7 @@ void CHcsmCollection::SetHcsmDial(
 //
 // Description:  Sets the specifed button of the given object.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   cCvedId - The CVED object whose dial should be set.
@@ -920,7 +925,7 @@ void CHcsmCollection::SetHcsmButton(
 	// Get a pointer to the CVED by the given id.
 	//
 	const CDynObj* pObj = m_pCved->BindObjIdToClass( cCvedId );
-	if( !pObj || !pObj->IsValid() ) 
+	if( !pObj || !pObj->IsValid() )
 	{
 		cerr << "SetHcsmButton: invalid cved id = " << cCvedId << endl;
 		return;
@@ -954,7 +959,7 @@ void CHcsmCollection::SetHcsmButton(
 // Description:  Reads the settings to buttons and dials of various objects
 //   from external sources.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //
@@ -979,20 +984,20 @@ void CHcsmCollection::ReadExternalBtnDialSettings()
 	strncpy( bigToken, pToken,tokSize );
 	char* pSemi;
 	pSemi = strtok_s(bigToken, "|",&pCurrPos);
-	if( pSemi ) 
+	if( pSemi )
 	{
 		strncpy( cmd1, pSemi,tokSize );
 		pSemi = strtok_s( 0, "|" ,&pCurrPos);
-		if( pSemi ) 
+		if( pSemi )
 		{
 			strncpy( cmd2, pSemi,tokSize );
 		}
-		else 
+		else
 		{
 			cmd2[0] = 0;
 		}
 	}
-	else 
+	else
 	{
 		cmd1[0] = 0;
 	}
@@ -1002,11 +1007,11 @@ void CHcsmCollection::ReadExternalBtnDialSettings()
 	{
 		char token[256];
 
-		if( hack == 0 ) 
+		if( hack == 0 )
 		{
 			strncpy( token, cmd1,tokSize );
 		}
-		else 
+		else
 		{
 			strncpy( token, cmd2,tokSize );
 		}
@@ -1021,7 +1026,7 @@ void CHcsmCollection::ReadExternalBtnDialSettings()
 			int cvedId = atoi( cvedIdStr.c_str() );
 
 			char* pBtnDialName = strtok_s( NULL, ":",&pCurrPos );
-			if( pBtnDialName ) 
+			if( pBtnDialName )
 			{
 				//
 				// Found the button/dial name.
@@ -1044,7 +1049,7 @@ void CHcsmCollection::ReadExternalBtnDialSettings()
 					//
 					// Found a button only.  Set the button.
 					//
-					SetHcsmButton( cvedId, btnDialNameStr );				
+					SetHcsmButton( cvedId, btnDialNameStr );
 					m_sObjBtnDialValToHcsm[0] = 0;
 				}
 			}
@@ -1064,7 +1069,7 @@ void CHcsmCollection::ReadExternalBtnDialSettings()
 //
 // Description:  Executes all HCSMs in the hcsm array.
 //
-// Remarks:  This function executes each active HCSM in the hcsm array 
+// Remarks:  This function executes each active HCSM in the hcsm array
 //   by calling the HCSM's execute function.
 //
 // Arguments:
@@ -1074,8 +1079,8 @@ void CHcsmCollection::ReadExternalBtnDialSettings()
 //////////////////////////////////////////////////////////////////////////////
 void CHcsmCollection::ExecuteAllHcsm()
 {
-	
-	//do timer we need to maintain  
+
+	//do timer we need to maintain
 	// we need to maintian (m_currRate * .8) > m_currUpdateTime, if not we are dropping frames
 #ifdef CALC_HEADROOM
 	LARGE_INTEGER tempF, tempC;
@@ -1099,26 +1104,26 @@ void CHcsmCollection::ExecuteAllHcsm()
 
     multimap<int,CHcsm*> elemsByPriorityToExecute;
 
-	
+
 	//
 	// Execute all void hcsms in the hcsm array.
 	//
 	// COULD THIS BE MORE EFFICIENT BY USING THE MAP TO FIND HCSMS ??
 	//
 	int i;
-	for( i = 0; i < cMAX_ROOT_HCSM; i++ ) 
+	for( i = 0; i < cMAX_ROOT_HCSM; i++ )
 	{
 		//
 		// Check to make sure that this slot contains a valid pointer to
 		// an hcsm instance.
 		//
-		if( m_hcsmInstances[i] ) 
-		{	
+		if( m_hcsmInstances[i] )
+		{
 			//
 			// Now check to see if the root hcsm is active.
 			//
-			if ( m_hcsmInstances[i]->GetState() == eACTIVE ) 
-			{	
+			if ( m_hcsmInstances[i]->GetState() == eACTIVE )
+			{
 				//MemLog( i, HLOG_EXECALL_DOONE_1, m_hcsmInstances[i]->MyName() );
 				//m_hcsmInstances[i]->Execute();
 				//MemLog( i, HLOG_EXECALL_DOONE_2, 0 );
@@ -1127,7 +1132,7 @@ void CHcsmCollection::ExecuteAllHcsm()
 		}
 	}
 
-    multimap<int,CHcsm*>::const_iterator itr; 
+    multimap<int,CHcsm*>::const_iterator itr;
     for (itr = elemsByPriorityToExecute.begin();itr != elemsByPriorityToExecute.end(); itr++){
         MemLog( i, HLOG_EXECALL_DOONE_1, itr->second->MyName() );
         try {
@@ -1135,7 +1140,7 @@ void CHcsmCollection::ExecuteAllHcsm()
         }catch(cvCInternalError e){
             gout<<"Got Internal Error: "<<e.m_msg<<endl<<"When running"<<itr->second->GetName()<<endl;
         }
-		MemLog( i, HLOG_EXECALL_DOONE_2, 0 );        
+		MemLog( i, HLOG_EXECALL_DOONE_2, 0 );
     }
 
 	//
@@ -1182,7 +1187,7 @@ void CHcsmCollection::ExecuteAllHcsm()
 //   to find the HCSM.
 //
 //////////////////////////////////////////////////////////////////////////////
-int CHcsmCollection::GetHcsmId( CHcsm* pHcsm ) 
+int CHcsmCollection::GetHcsmId( CHcsm* pHcsm )
 {
 	map<CHcsm*, int>::iterator mapIterator;
 	mapIterator = m_hcsmMap.find( pHcsm );
@@ -1207,14 +1212,14 @@ int CHcsmCollection::GetHcsmId( CHcsm* pHcsm )
 // Returns:  A pointer to the CHcsm instance, if it exists, NULL otherwise.
 //
 //////////////////////////////////////////////////////////////////////////////
-CHcsm* CHcsmCollection::GetHcsm( int id ) const 
+CHcsm* CHcsmCollection::GetHcsm( int id ) const
 {
 	return m_hcsmInstances[id];
 }
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// Description:  Retrieves a pointer to the Hcsm for the first Hcsm found 
+// Description:  Retrieves a pointer to the Hcsm for the first Hcsm found
 // 	with the given name.
 //
 // Remarks:  This function uses the information stored in the m_hcsmInstances.
@@ -1225,7 +1230,7 @@ CHcsm* CHcsmCollection::GetHcsm( int id ) const
 // Returns:  A pointer to the CHcsm instance, if it exists, NULL otherwise.
 //
 //////////////////////////////////////////////////////////////////////////////
-CHcsm* CHcsmCollection::GetHcsm( const string& cName ) const 
+CHcsm* CHcsmCollection::GetHcsm( const string& cName ) const
 {
 	map<CHcsm*, int>::const_iterator itr;
 	for( itr = m_hcsmMap.begin(); itr != m_hcsmMap.end(); itr++ )
@@ -1252,8 +1257,8 @@ CHcsm* CHcsmCollection::GetHcsm( const string& cName ) const
 // Returns:  A pointer to the CHcsm instance, if it exists, NULL otherwise.
 //
 //////////////////////////////////////////////////////////////////////////////
-void CHcsmCollection::SetHcsmDebugLevel( 
-			const int id, 
+void CHcsmCollection::SetHcsmDebugLevel(
+			const int id,
 			const CHcsmDebugItem::ELevel debugLevel
 			)
 {
@@ -1263,7 +1268,7 @@ void CHcsmCollection::SetHcsmDebugLevel(
 
 
 void CHcsmCollection::SetHcsmDebugLevel(
-			CHcsm* pHcsm, 
+			CHcsm* pHcsm,
 			const CHcsmDebugItem::ELevel debugLevel
 			)
 {
@@ -1276,7 +1281,7 @@ void CHcsmCollection::SetHcsmDebugLevel(
 {
 	int i;
 
-	for( i = 0; i < cMAX_ROOT_HCSM; i++ ) 
+	for( i = 0; i < cMAX_ROOT_HCSM; i++ )
 	{
 		if( m_hcsmInstances[i] )
 		{
@@ -1302,26 +1307,26 @@ void CHcsmCollection::SetHcsmDebugLevel(
 // Returns:  A pointer to the CHcsm instance, if it exists, NULL otherwise.
 //
 //////////////////////////////////////////////////////////////////////////////
-void 
+void
 CHcsmCollection::SetHcsmDebugMode( int id, EDebugMode mode )
 {
 	m_hcsmInstances[id]->SetDebugMode( mode );
 }
 
-void 
+void
 CHcsmCollection::SetHcsmDebugMode( CHcsm*  pH, EDebugMode mode )
 {
 	pH->SetDebugMode( mode );
 }
 
 
-void 
+void
 CHcsmCollection::SetHcsmDebugMode( EDebugMode mode )
 {
 	int i;
-	for( i = 0; i < cMAX_ROOT_HCSM; i++ ) 
+	for( i = 0; i < cMAX_ROOT_HCSM; i++ )
 	{
-		if( m_hcsmInstances[i] && m_hcsmInstances[i]->GetState() == eACTIVE ) 
+		if( m_hcsmInstances[i] && m_hcsmInstances[i]->GetState() == eACTIVE )
 		{
 			m_hcsmInstances[i]->SetDebugMode( mode );
 		}
@@ -1334,7 +1339,7 @@ CHcsmCollection::SetHcsmDebugMode( EDebugMode mode )
 // Description:  Register a vehicle with the intersection manager.
 //
 // Remarks:  Adds the register request to a pool of requests.  The IM
-//   reads the request from here and processes them in order.  This 
+//   reads the request from here and processes them in order.  This
 //   probably shouldn't be located in the HCSM collection but, for now,
 //   this is the best place to put it.
 //
@@ -1346,7 +1351,7 @@ CHcsmCollection::SetHcsmDebugMode( EDebugMode mode )
 // Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
-void 
+void
 CHcsmCollection::ImRegister( int objId, int intrsctnId )
 {
 
@@ -1366,7 +1371,7 @@ CHcsmCollection::ImRegister( int objId, int intrsctnId )
 //
 // Description:  Returns the oldest IM register request.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   elem - (output) Contains the request data.
@@ -1406,7 +1411,7 @@ CHcsmCollection::MemLog( int hcsmId, int tag, const char* pMsg )
 // Arguments:
 //   cFileNames - A vector of file names.
 //
-// Returns:  
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -1423,7 +1428,7 @@ CHcsmCollection::PreloadFiles( const vector<string>& cFileNames )
 		string fileName = *itr;
         string scnPath;
         NADS::GetEnvVar(scnPath,"NADSSDC_SCN" );
-		if( scnPath == "" ) 
+		if( scnPath == "" )
 		{
 			gout << "PreloadFiles: undefined system ";
 			gout << "variable 'NADSSDC_SCN'" << endl;
@@ -1446,14 +1451,14 @@ CHcsmCollection::PreloadFiles( const vector<string>& cFileNames )
 			continue;
 		}
 
-		// 
+		//
 		// Read the contents of the file into a vector of strings..one for
 		// each line.
 		//
 		TPreloadData preloadData;
 		preloadData.fileName = fileName;
 		char buf[1024];
-	
+
 		while( preloadFile )
 		{
 			preloadFile.getline( buf, 1024 );
@@ -1470,7 +1475,7 @@ CHcsmCollection::PreloadFiles( const vector<string>& cFileNames )
 //
 // Description: Gets a new handle to the specified preload file.
 //
-// Remarks: 
+// Remarks:
 //
 // Arguments:
 //   cFileName - The name of the preload file to get a handle for.
@@ -1479,7 +1484,7 @@ CHcsmCollection::PreloadFiles( const vector<string>& cFileNames )
 //  file was found corresponding to the input filename.
 //
 //////////////////////////////////////////////////////////////////////////////
-int 
+int
 CHcsmCollection::GetPreloadFileHandle( const string& cFileName )
 {
 	//
@@ -1487,8 +1492,8 @@ CHcsmCollection::GetPreloadFileHandle( const string& cFileName )
 	//
 	bool foundFile = false;
 	vector<TPreloadData>::const_iterator cItr;
-	for( 
-		cItr = m_preloadFiles.begin(); 
+	for(
+		cItr = m_preloadFiles.begin();
 		cItr != m_preloadFiles.end();
 		cItr++
 		)
@@ -1521,7 +1526,7 @@ CHcsmCollection::GetPreloadFileHandle( const string& cFileName )
 // Description: Given a file handle, gets the sample of data from the file
 //  pointed to by the file handle.
 //
-// Remarks: 
+// Remarks:
 //
 // Arguments:
 //   fileHandle - The file handle.
@@ -1531,12 +1536,12 @@ CHcsmCollection::GetPreloadFileHandle( const string& cFileName )
 //  to return.
 //
 //////////////////////////////////////////////////////////////////////////////
-bool 
+bool
 CHcsmCollection::GetNextPreloadFileSample( int fileHandle, string& data )
 {
 	map<int, TPreloadMapData>::iterator mapIterator;
 	mapIterator = m_preloadHandleMap.find( fileHandle );
-	if( mapIterator == m_preloadHandleMap.end() ) 
+	if( mapIterator == m_preloadHandleMap.end() )
 	{
 		gout << "GetNextPreloadFileSample: fileHandle ";
 		gout << fileHandle << " not found" << endl;
@@ -1576,7 +1581,7 @@ CHcsmCollection::GetNextPreloadFileSample( int fileHandle, string& data )
 //
 // Description:  Sets the HCSM creation log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   pHcsm - A pointer to the HCSM being created.
@@ -1584,7 +1589,7 @@ CHcsmCollection::GetNextPreloadFileSample( int fileHandle, string& data )
 //   cHcsmName - The HCSM's name.
 //   cPos - The HCSM's position at creation.
 //
-// Returns:  
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -1612,14 +1617,14 @@ CHcsmCollection::SetHcsmCreateLog(
 //
 // Description:  Sets the Start DataRed log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   hcsmId - The HCSM id of the trigger
 //   segment - An integer representing the segment.
 //   pParams - Param string
 //
-// Returns:  
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -1647,14 +1652,14 @@ CHcsmCollection::SetActionStartDataRedLog(
 //
 // Description:  Sets the Start DataRed log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   hcsmId - The HCSM id of the trigger
 //   segment - An integer representing the segment.
 //   pParams - Param string
 //
-// Returns:  
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -1682,13 +1687,13 @@ CHcsmCollection::SetActionStopDataRedLog(
 //
 // Description:  Sets the UseTrafManSet log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   hcsmId - The HCSM id of the trigger
 //   cSetName - The name of the set to change to.
 //
-// Returns:  
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -1714,12 +1719,12 @@ CHcsmCollection::SetActionUseTrafManSetLog(
 //
 // Description:  Sets the PlayAudio log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   hcsmId - The HCSM id of the trigger
 //
-// Returns:  
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -1744,12 +1749,12 @@ CHcsmCollection::SetActionPlayAudioLog(
 //
 // Description:  Sets the VehicleFailure log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   hcsmId - The HCSM id of the trigger
 //
-// Returns:  
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -1774,16 +1779,16 @@ CHcsmCollection::SetActionVehicleFailureLog(
 //
 // Description:  Sets the TrafficLight log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   hcsmId - The HCSM id of the trigger
 //   trafLightId - the CVED id of the traffic light
 //   trafLightState - the state the traffic light will change to
 //   time - the amount of time that the traffic light will take to change
-//   
 //
-// Returns:  
+//
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -1811,15 +1816,15 @@ CHcsmCollection::SetActionTrafficLightLog(
 //
 // Description:  Sets the LogData log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   hcsmId - The HCSM id of the trigger
 //   logId - The index into the log array
 //   value - The value stored at that index
-//   
 //
-// Returns:  
+//
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -1846,13 +1851,13 @@ CHcsmCollection::SetActionLogDataLog(
 //
 // Description:  Sets the TerminateSimulation log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   hcsmId - The HCSM id of the trigger
-//   
 //
-// Returns:  
+//
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -1877,13 +1882,13 @@ CHcsmCollection::SetActionTerminateSimulationLog(
 //
 // Description:  Sets the PreposMotion log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   hcsmId - The HCSM id of the trigger
-//   
 //
-// Returns:  
+//
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -1908,13 +1913,13 @@ CHcsmCollection::SetActionPreposMotionLog(
 //
 // Description:  Sets the TuneMotion log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   hcsmId - The HCSM id of the trigger
-//   
 //
-// Returns:  
+//
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -1939,13 +1944,13 @@ CHcsmCollection::SetActionTuneMotionLog(
 //
 // Description:  Sets the PhoneCall log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   hcsmId - The HCSM id of the trigger
-//   
 //
-// Returns:  
+//
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -1970,13 +1975,13 @@ CHcsmCollection::SetActionPhoneCallLog(
 //
 // Description:  Sets the ResetDial log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   hcsmId - The HCSM id of the trigger
-//   
 //
-// Returns:  
+//
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -2002,15 +2007,15 @@ CHcsmCollection::SetActionResetDialLog(
 //
 // Description:  Sets the SetVariable log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   hcsmId - The HCSM id of the trigger
 //   varName - the name of the variable being set
 //   value - the value to assign the variable
-//   
 //
-// Returns:  
+//
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -2037,15 +2042,15 @@ CHcsmCollection::SetActionSetVariableLog(
 //
 // Description:  Sets the SetDial Action log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   hcsmId - The HCSM id of the trigger
 //   cDialName - the name of the dial being set
 //   cValue - the value of the dial
-//   
 //
-// Returns:  
+//
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -2072,14 +2077,14 @@ CHcsmCollection::SetActionSetDialLog(
 //
 // Description:  Sets the SetButton Action log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   hcsmId - The HCSM id of the trigger
 //   cButtonName - the name of the variable being set
-//   
 //
-// Returns:  
+//
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -2105,13 +2110,13 @@ CHcsmCollection::SetActionSetButtonLog(
 //
 // Description:  Sets the Create Action log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   hcsmId - The HCSM id of the trigger
-//   
 //
-// Returns:  
+//
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -2136,13 +2141,13 @@ CHcsmCollection::SetActionCreateLog(
 //
 // Description:  Sets the Create Action log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   hcsmId - The HCSM id of the trigger
-//   
 //
-// Returns:  
+//
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -2167,13 +2172,13 @@ CHcsmCollection::SetActionDeleteLog(
 //
 // Description:  Sets the HCSM deletion log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   pHcsm - A pointer to the HCSM being created.
 //   cPos - The HCSM's position at creation.
 //
-// Returns:  
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -2197,13 +2202,13 @@ CHcsmCollection::SetHcsmDeleteLog( CHcsm* pHcsm, const CPoint3D& cPos )
 //
 // Description:  Sets the HCSM activation log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   pHcsm - A pointer to the HCSM being activated.
 //   cPos - The HCSM's position at activation.
 //
-// Returns:  
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -2227,7 +2232,7 @@ CHcsmCollection::SetHcsmActivateLog( CHcsm* pHcsm, const CPoint3D& cPos )
 //
 // Description:  Sets the CVED creation log.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   pHcsm - A pointer to the HCSM representing the CVED object being created.
@@ -2235,7 +2240,7 @@ CHcsmCollection::SetHcsmActivateLog( CHcsm* pHcsm, const CPoint3D& cPos )
 //   cvedType - The CVED object's type.
 //   cPos - The object's position at creation.
 //
-// Returns:  
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -2264,7 +2269,7 @@ CHcsmCollection::SetCvedCreateLog(
 //
 // Description:  Sets a trigger's fire event.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   pHcsm - A pointer to the HCSM being created.
@@ -2272,7 +2277,7 @@ CHcsmCollection::SetCvedCreateLog(
 //   cHcsmName - The HCSM's name.
 //   cPos - The HCSM's position at creation.
 //
-// Returns:  
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -2289,11 +2294,11 @@ CHcsmCollection::SetTriggerFireLog(
 	if( m_logActivities )
 	{
 		CEventTriggerFire event;
-		event.SetData( 
-					GetHcsmId( pHcsm ), 
-					instigatorHcsmId, 
-					pCandidateSet, 
-					candidateSetSize 
+		event.SetData(
+					GetHcsmId( pHcsm ),
+					instigatorHcsmId,
+					pCandidateSet,
+					candidateSetSize
 					);
 		m_sActvLog.Add( m_frame, &event );
 
@@ -2306,14 +2311,14 @@ CHcsmCollection::SetTriggerFireLog(
 //
 // Description:  Sets the dial set event.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   pHcsm - A pointer to the HCSM being created.
 //   cDialName - A string representing the dial's name.
 //   cSetting - The dial's setting value.
 //
-// Returns:  
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -2341,14 +2346,14 @@ CHcsmCollection::SetDialSettingLog(
 //
 // Description:  Sets the dial set event.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   pHcsm - A pointer to the HCSM being created.
 //   cDialName - A string representing the dial's name.
 //   value - The dial's setting value.
 //
-// Returns:  
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -2379,13 +2384,13 @@ CHcsmCollection::SetDialSettingLog(
 //
 // Description:  Sets the button set event.
 //
-// Remarks:  
+// Remarks:
 //
 // Arguments:
 //   pHcsm - A pointer to the HCSM being created.
 //   cButtonName - The button's name.
 //
-// Returns:  
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
 void
@@ -2409,9 +2414,9 @@ CHcsmCollection::SetButtonSettingLog( CHcsm* pHcsm, const string& cButtonName )
 ///\remark
 ///    if one is not found with given name returns a random number generator
 ///    that is inited with a seed set from random device (which is a HW lvl)
-///    
+///
 ////////////////////////////////////////////////////////////////////////////
-void 
+void
    CHcsmCollection::CreateRandomNumberGenerator( const string& cName, const vector<long> &seed ){
     if (seed.size() == 0){
         m_randomGenerators[cName] = shared_ptr<mt19937>(new std::mt19937(std::random_device()));
@@ -2426,9 +2431,9 @@ void
 ///\remark
 ///    if one is not found with given name returns a random number generator
 ///    that is inited with a seed set from random device (which is a HW lvl)
-///    
+///
 ////////////////////////////////////////////////////////////////////////////
-shared_ptr<mt19937> 
+shared_ptr<mt19937>
 CHcsmCollection::GetRandomNumberGenerator(const string& cName){
     auto itr = m_randomGenerators.find(cName);
     if (itr != m_randomGenerators.end()){
@@ -2446,7 +2451,7 @@ CHcsmCollection::DoesRandomNumberGeneratorExist(const string& cName)
 void
 CHcsmCollection::SetExprVariable( const string& cName, double value )
 {
-	
+
 	m_exprVariables[cName] = value;
 }
 
@@ -2459,11 +2464,11 @@ CHcsmCollection::ExprVariableExists( const string& cName )
 double
 CHcsmCollection::GetExprVariable( const string& cName )
 {
-	if( !ExprVariableExists( cName ) ) 
+	if( !ExprVariableExists( cName ) )
 	{
 		return 0.0;
 	}
-	else 
+	else
 	{
 		return m_exprVariables[cName];
 	}
@@ -2484,11 +2489,11 @@ CHcsmCollection::ExprPosVariableExists( const string& cName )
 CPoint3D
 CHcsmCollection::GetExprPosVariable( const string& cName )
 {
-	if( !ExprPosVariableExists( cName ) ) 
+	if( !ExprPosVariableExists( cName ) )
 	{
 		return CPoint3D(0,0,0);
 	}
-	else 
+	else
 	{
 		return m_exprPosVariables[cName];
 	}
@@ -2507,7 +2512,7 @@ void CHcsmCollection::ClearVariables(){
 ////////////////////////////////////////////////////////////////////////////////////////////
 bool
 CHcsmCollection::DoVarQueueOperation(const string& opp){
-  typedef boost::tokenizer<boost::char_separator<char> > 
+  typedef boost::tokenizer<boost::char_separator<char> >
     tokenizer;
   boost::char_separator<char> sep(":;,()");
   tokenizer tokens(opp, sep);
@@ -2623,7 +2628,7 @@ CHcsmCollection::DoVarQueueOperation(const string& opp){
           float min = 0; float max = 0; float stride = 1.0f;
           converter>>min>>max>>stride;
           max+=stride;
-          for (float i = min; i < max; i+=stride){ 
+          for (float i = min; i < max; i+=stride){
             valuePair.second = i;
             targetQueueItr->second.push_back(valuePair);
           }
@@ -2658,17 +2663,17 @@ CHcsmCollection::DoVarQueueOperation(const string& opp){
           std::random_shuffle(
               targetQueueItr->second.begin(),
               targetQueueItr->second.end(),
-              [&rd] (int i){ 
+              [&rd] (int i){
                   return rd()%i;
               }
-          ); 
+          );
       }
     }else{
         return false;
     }
   }
   return true;
-  
+
 }
 //////////////////////////////////////////////////////////////////////////////
 ///\brief
@@ -2693,17 +2698,17 @@ CHcsmCollection::GetVarQueueSize(const string& varQue, int& size){
 //
 // Arguments:
 //
-// Returns: A const string reference.  
+// Returns: A const string reference.
 //
 //////////////////////////////////////////////////////////////////////////////
-void 
+void
 CHcsmCollection::GetVisualDisplayText( string& displayText, int location )
 {
     map<int,string>::iterator itr = m_sVisualDisplayText.find(location);
     if (itr != m_sVisualDisplayText.end()){
         displayText = itr->second;
     }else{
-        displayText.clear(); 
+        displayText.clear();
     }
 }
 
@@ -2716,10 +2721,10 @@ CHcsmCollection::GetVisualDisplayText( string& displayText, int location )
 // Arguments:
 //  cDisplayText - The text to be displayed.
 //
-// Returns:  
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
-void 
+void
 CHcsmCollection::SetVisualDisplayText( const string& cDisplayText, int location )
 {
 	m_sVisualDisplayText[location] = cDisplayText;
@@ -2734,10 +2739,10 @@ CHcsmCollection::SetVisualDisplayText( const string& cDisplayText, int location 
 //
 // Arguments:
 //
-// Returns: A const string reference.  
+// Returns: A const string reference.
 //
 //////////////////////////////////////////////////////////////////////////////
-void 
+void
 CHcsmCollection::GetVisualSettings( string& visualSettings )
 {
 	visualSettings = m_sVisualSettings;
@@ -2753,32 +2758,32 @@ CHcsmCollection::GetVisualSettings( string& visualSettings )
 // Arguments:
 //  cDisplayText - The text to be displayed.
 //
-// Returns:  
+// Returns:
 //
 //////////////////////////////////////////////////////////////////////////////
-void 
+void
 CHcsmCollection::SetVisualSettings( const string& cVisualSettings )
 {
 	m_sVisualSettings = cVisualSettings;
 }
 
-bool 
+bool
 CHcsmCollection::IsSimulationTerminated( void )
 {
 	return CHcsmCollection::m_sSCC_Scenario_Stop_Ind == 1;
 }
 
-string 
+string
 CHcsmCollection::GetActvLogFileName( void ) const
 {
 	//
-	// Build the activity log file name.  It should be written to 
-	// bin directory(where other logs exist) and the name should be 
+	// Build the activity log file name.  It should be written to
+	// bin directory(where other logs exist) and the name should be
 	// composed of the run instance name and a ".txt" suffix.
 	//
 	string logFileName;
     NADS::GetEnvVar(logFileName,"NADSSDC_BIN" );
-	if( logFileName != "" ) 
+	if( logFileName != "" )
 	{
 		logFileName += "\\";
 	}
@@ -2837,11 +2842,11 @@ CHcsmCollection::GetActvLogFileName( void ) const
 ///\param[in] actions array of actions (0-255)
 ///\param[in] times time to perform blocking actions at each node
 /////////////////////////////////////////////////////////////////////////////
-void CHcsmCollection::SetDiGuyPathInfo(int id, 
+void CHcsmCollection::SetDiGuyPathInfo(int id,
 	                                   const vector<float> &path,
 									   const vector<char> &actions,
 									   const vector<float> &times){
-	m_DiGuyPathCriticalSection.Lock(); 
+	m_DiGuyPathCriticalSection.Lock();
 	auto itr = CHcsmCollection::m_sDiGuyPathInfo.find(id);
 	m_sDiGuyPathInfo[id] = path;
 	if (actions.size() > 0){
@@ -2865,11 +2870,11 @@ void CHcsmCollection::SetDiGuyPathInfo(int id,
 ///\param[out] actions array of actions (0-255)
 ///\param[out] times time to perform blocking actions at each node
 /////////////////////////////////////////////////////////////////////////////
-void CHcsmCollection::GetDiGuyPathInfo(int id, 
+void CHcsmCollection::GetDiGuyPathInfo(int id,
 	                                   vector<float> &path,
 									   vector<char> &actions,
 									   vector<float> &times){
-	m_DiGuyPathCriticalSection.Lock(); 
+	m_DiGuyPathCriticalSection.Lock();
 	actions.clear();
 	times.clear();
 	auto itr = CHcsmCollection::m_sDiGuyPathInfo.find(id);
@@ -2906,7 +2911,7 @@ void CHcsmCollection::clearDiGuyCommandQueue(){
 ///		Set the last known good location of the ownship
 ///\remark
 ///		This function set the last good location of the ownship, the last good location
-///		is defined as the last position the user was on the road, and in pre-defined 
+///		is defined as the last position the user was on the road, and in pre-defined
 ///		ownship path. This function provides a mutex lock as the read and writer of this
 ///		data is most likely going to be two different threads, so we want to make sure we
 ///		do not get somekind of dirty read on the user end
@@ -2925,7 +2930,7 @@ void CHcsmCollection::SetLastGoodPosition(float x, float y, float z){
 ///		Set the last known good location of the ownship
 ///\remark
 ///		This function set the last good location of the ownship, the last good location
-///		is defined as the last position the user was on the road, and in pre-defined 
+///		is defined as the last position the user was on the road, and in pre-defined
 ///		ownship path. This function provides a mutex lock as the read and writer of this
 ///		data is most likely going to be two different threads, so we want to make sure we
 ///		do not get somekind of dirty read on the user end
@@ -2959,19 +2964,19 @@ void CHcsmStaticLock::UnLock(){
 ///\remark
 ///    This function may return null
 /////////////////////////////////////////////////////////////////////////////
-CHcsm* 
+CHcsm*
 CHcsmCollection::GetExtDriverSurrogate( ) const{
   return m_ownDriverSurrogate;
 
 }
 /////////////////////////////////////////////////////////////////////////////
 ///\brief
-///    Sets the reference of the ADO Surrogate 
+///    Sets the reference of the ADO Surrogate
 ///\remark
 ///    This function does not actually set a ADO to be the Surrogate,
 ///    it just set the reference so it can be found be other systems.
 /////////////////////////////////////////////////////////////////////////////
-void  
+void
 CHcsmCollection::SetExtDriverSurrogate(CHcsm* pObj){
 	m_ownDriverSurrogate = pObj;
 }
