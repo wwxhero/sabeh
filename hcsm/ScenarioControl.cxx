@@ -850,7 +850,7 @@ void CScenarioControl::SetRehearsalChangeLaneLeftExternalDriver(){
 bool CScenarioControl::InitDistriEDOCtrlSim( bool simulateOwnVeh )
 {
 	if( m_pExternalObjCtrl ) ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
-	m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK);
+	m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK, edo_controller);
 	CSnoParserDistri parser;
 	bool initialized = parser.Init();
 	if (initialized)
@@ -902,7 +902,7 @@ bool CScenarioControl::InitDistriEDOCtrlSim( bool simulateOwnVeh )
 bool CScenarioControl::InitDistriEDOCtrlSim(const char* filePath, bool simulateOwnVeh)
 {
 	if( m_pExternalObjCtrl ) ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
-	m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK);
+	m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK, edo_controller);
 
 	//
 	// Create a scenario name and perform translation.
