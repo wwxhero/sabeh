@@ -29,6 +29,9 @@ using namespace std;
 #include <exception>
 #include "expevalAdo.h"
 #include <tchar.h>
+
+#include "CvedADOctrl.h"
+
 //
 // Debugging macros.
 //
@@ -2136,7 +2139,7 @@ CAdo::CreateCvedObject( const CAdoParseBlock* cpSnoBlock )
 		// Create the CVED object.
 		//
 #if defined ADO_CONTROLLER
-		m_pI->m_pObj = static_cast<CVED::CCvedAdoCtrl*>(cved)->DistriCreateDynObj(
+		m_pI->m_pObj = static_cast<CCvedADOCtrl*>(cved)->DistriCreateDynObj(
 							cpSnoBlock->GetName(),
 							attr,
 							&cartPos,
@@ -2222,7 +2225,7 @@ CAdo::CreateCvedObject( const CAdoParseBlock* cpSnoBlock )
 		// Create the CVED object.
 		//
 #if defined ADO_CONTROLLER
-		m_pI->m_pObj = static_cast<CVED::CCvedAdoCtrl*>(cved)->DistriCreateDynObj(
+		m_pI->m_pObj = static_cast<CCvedADOCtrl*>(cved)->DistriCreateDynObj(
 							m_pI->m_objName,
 							attr,
 							&cartPos,
@@ -6364,7 +6367,7 @@ CAdo::UserDeletion( const CAdoParseBlock* cpSnoBlock )
 	if( cvedObjValid )
 	{
 #if defined ADO_CONTROLLER
-		static_cast<CVED::CCvedAdoCtrl*>(cved)->DistriDeleteDynObj(m_pI->m_pObj);
+		static_cast<CCvedADOCtrl*>(cved)->DistriDeleteDynObj(m_pI->m_pObj);
 #else
 		cved->DeleteDynObj( m_pI->m_pObj );
 #endif
