@@ -18,6 +18,7 @@
 #include "EnvVar.h"
 #include "LibExternalObjectIfNetwork.h"
 #include "CvedEDOCtrl.h"
+#include "CvedAdoCtrl.h"
 //#include "cvedstrc.h"
 #define _DIFF_DISTRI_SCENE
 
@@ -847,10 +848,10 @@ void CScenarioControl::SetRehearsalChangeLaneLeftExternalDriver(){
 //
 //////////////////////////////////////////////////////////////////////////////
 
-bool CScenarioControl::InitDistriEDOCtrlSim( bool simulateOwnVeh )
+bool CScenarioControl::InitDistriADOCtrlSim()
 {
 	if( m_pExternalObjCtrl ) ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
-	m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK, edo_controller);
+	m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK, ado_controller);
 	CSnoParserDistri parser;
 	bool initialized = parser.Init();
 	if (initialized)
@@ -876,7 +877,7 @@ bool CScenarioControl::InitDistriEDOCtrlSim( bool simulateOwnVeh )
 		m_pHdrBlk = new CHeaderDistriParseBlock( *pBlock );
 
 		if( m_pCved ) delete m_pCved;
-		m_pCved = new CCvedEDOCtrl(m_pExternalObjCtrl);
+		m_pCved = new CCvedADOCtrl(m_pExternalObjCtrl);
 		m_pCved->Configure( CCved::eCV_SINGLE_USER, m_behavDeltaT, m_dynaMult );
 		string cvedErr;
 		bool success = m_pCved->Init( m_pHdrBlk->GetLriFile(), cvedErr );
@@ -887,7 +888,7 @@ bool CScenarioControl::InitDistriEDOCtrlSim( bool simulateOwnVeh )
 		}
 
 		initialized = m_pExternalObjCtrl->Initialize(static_cast<CHeaderDistriParseBlock&>(*m_pHdrBlk), static_cast<CVED::CCvedDistri*>(m_pCved)) //the configuration for localhost simulator will be identified
-					&& InitSimulation(parser, simulateOwnVeh);
+					&& InitSimulation(parser, false);
 	}
 
 	if (!initialized)

@@ -2135,6 +2135,14 @@ CAdo::CreateCvedObject( const CAdoParseBlock* cpSnoBlock )
 		//
 		// Create the CVED object.
 		//
+#if defined ADO_CONTROLLER
+		m_pI->m_pObj = static_cast<CVED::CCvedAdoCtrl*>(cved)->DistriCreateDynObj(
+							cpSnoBlock->GetName(),
+							attr,
+							&cartPos,
+							&tan
+							);
+#else
 		m_pI->m_pObj = cved->CreateDynObj(
 							cpSnoBlock->GetName(),
 							objType,
@@ -2143,6 +2151,7 @@ CAdo::CreateCvedObject( const CAdoParseBlock* cpSnoBlock )
 							&cartPos,
 							&tan
 							);
+#endif
 	}  // end if vehicle offroad
 	else
 	{
@@ -2212,6 +2221,14 @@ CAdo::CreateCvedObject( const CAdoParseBlock* cpSnoBlock )
 		//
 		// Create the CVED object.
 		//
+#if defined ADO_CONTROLLER
+		m_pI->m_pObj = static_cast<CVED::CCvedAdoCtrl*>(cved)->DistriCreateDynObj(
+							m_pI->m_objName,
+							attr,
+							&cartPos,
+							&tan,
+							&lat);
+#else
 		m_pI->m_pObj = cved->CreateDynObj(
 //							cpSnoBlock->GetName(),
 							m_pI->m_objName,
@@ -2222,6 +2239,7 @@ CAdo::CreateCvedObject( const CAdoParseBlock* cpSnoBlock )
 							&tan,
 							&lat
 							);
+#endif
 	}  // end else vehicle on the road
 
 	//
@@ -6345,7 +6363,11 @@ CAdo::UserDeletion( const CAdoParseBlock* cpSnoBlock )
  	bool cvedObjValid = m_pI->m_pObj && m_pI->m_pObj->IsValid();
 	if( cvedObjValid )
 	{
+#if defined ADO_CONTROLLER
+		static_cast<CVED::CCvedAdoCtrl*>(cved)->DistriDeleteDynObj(m_pI->m_pObj);
+#else
 		cved->DeleteDynObj( m_pI->m_pObj );
+#endif
 	}
 
 	//
