@@ -87,6 +87,12 @@ CScenarioControl::CScenarioControl()
 
 CScenarioControl::~CScenarioControl()
 {
+	if( m_pExternalObjCtrl )
+	{
+		m_pExternalObjCtrl->UnInitialize();
+		ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
+		m_pExternalObjCtrl = 0;
+	}
 	delete m_pHdrBlk;
 }
 
@@ -1415,17 +1421,17 @@ CScenarioControl::TerminateSimulation( void )
 {
 	ResetCollisionDetectionVars();
 
+	if( m_pRootColl )
+	{
+		delete m_pRootColl;
+		m_pRootColl = 0;
+	}
+
 	if( m_pExternalObjCtrl )
 	{
 		m_pExternalObjCtrl->UnInitialize();
 		ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
 		m_pExternalObjCtrl = 0;
-	}
-
-	if( m_pRootColl )
-	{
-		delete m_pRootColl;
-		m_pRootColl = 0;
 	}
 
 	if( m_pCved )
