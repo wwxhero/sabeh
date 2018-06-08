@@ -21,6 +21,7 @@
 #include "CvedAdoCtrl.h"
 //#include "cvedstrc.h"
 #define _DIFF_DISTRI_SCENE
+#define _DIFF_DISTRI_SCENE_PREFIX "Distri_"
 
 #include "util.h"
 #define DEFAULT_ROAD_MARKING_WHEN_NO_TAGS
@@ -854,12 +855,37 @@ void CScenarioControl::SetRehearsalChangeLaneLeftExternalDriver(){
 //
 //////////////////////////////////////////////////////////////////////////////
 
-bool CScenarioControl::InitDistriADOCtrlSim()
+bool CScenarioControl::InitDistriADOCtrlSim(const char* fullPath)
 {
 	if( m_pExternalObjCtrl ) ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
 	m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK, ado_controller);
 	CSnoParserDistri parser;
+#ifdef _DIFF_DISTRI_SCENE
+	const char c_deli = '\\';
+	const char* pThis = fullPath;
+	for (
+		; *pThis != '\0' && *pThis != c_deli
+		; pThis ++ );
+	if ('\0' == *pThis)
+		return false; //not right format of file path;
+	const char* pNext = pThis;
+	for (
+		; *pNext != '\0'
+		; pNext ++)
+	{
+		if (c_deli == *pNext)
+			pThis = pNext;
+	}
+	const char* pFile = pThis + 1;
+	std::string pathDir(fullPath, pThis - fullPath + 1);
+	std::string pathFile(_DIFF_DISTRI_SCENE_PREFIX);
+	pathFile += pFile;
+	std::string fullPathDistri = pathDir;
+	fullPathDistri += pathFile;
+	bool initialized = parser.ParseFile(fullPathDistri);
+#else
 	bool initialized = parser.Init();
+#endif
 	if (initialized)
 	{
 		//
@@ -915,7 +941,7 @@ bool CScenarioControl::InitDistriEDOCtrlSim(const char* filePath, bool simulateO
 	// Create a scenario name and perform translation.
 	//
 #ifdef _DIFF_DISTRI_SCENE
-	m_scnFileName = "Distri_";
+	m_scnFileName = _DIFF_DISTRI_SCENE_PREFIX;
 	m_scnFileName += filePath;
 #else
 	m_scnFileName = filePath;
