@@ -50,7 +50,7 @@ public:
 	void SetDefaults( float behavDelta, int dynaMult, int verbose );
 	const char* GetLastErrorString( void ) const;
 
-	bool InitDistriADOCtrlSim(const char*);
+	bool InitDistriADOCtrlSim(const char* fullPath, bool simulateEdoCtrl = false);
 	bool InitDistriEDOCtrlSim(const char*, bool simulateOwnVeh);
 	bool InitSimulation( const char*, bool simulateOwnVeh, bool isFile = true );
 	void TerminateSimulation( void );

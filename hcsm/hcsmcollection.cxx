@@ -530,7 +530,8 @@ CHcsm* CHcsmCollection::CreateHcsm(
 	{
 		// find the type that matches the hcsm name string
 #if defined (EDO_CONTROLLER)
-		if (cHcsmName != "Ado")
+		if (cHcsmName != "Ado"
+			|| cSnoBlock.GetName() == "ExternalDriver")
 			pHcsm = GetClassFromTemplateName( cHcsmName, cSnoBlock );
 #else
 		pHcsm = GetClassFromTemplateName( cHcsmName, cSnoBlock );

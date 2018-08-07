@@ -855,10 +855,8 @@ void CScenarioControl::SetRehearsalChangeLaneLeftExternalDriver(){
 //
 //////////////////////////////////////////////////////////////////////////////
 
-bool CScenarioControl::InitDistriADOCtrlSim(const char* fullPath)
+bool CScenarioControl::InitDistriADOCtrlSim(const char* fullPath, bool simulateEdoCtrl)
 {
-	if( m_pExternalObjCtrl ) ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
-	m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK, ado_controller);
 	CSnoParserDistri parser;
 #ifdef _DIFF_DISTRI_SCENE
 	const char c_deli = '\\';
@@ -908,19 +906,29 @@ bool CScenarioControl::InitDistriADOCtrlSim(const char* fullPath)
 		}
 		m_pHdrBlk = new CHeaderDistriParseBlock( *pBlock );
 
+		if( m_pExternalObjCtrl ) ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
 		if( m_pCved ) delete m_pCved;
-		m_pCved = new CCvedADOCtrl(m_pExternalObjCtrl);
+
+		if (simulateEdoCtrl)
+		{
+			m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK, edo_controller);
+			m_pCved = new CCvedEDOCtrl(m_pExternalObjCtrl);
+		}
+		else
+		{
+			m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK, ado_controller);
+			m_pCved = new CCvedADOCtrl(m_pExternalObjCtrl);
+		}
 		m_pCved->Configure( CCved::eCV_SINGLE_USER, m_behavDeltaT, m_dynaMult );
 		string cvedErr;
-		bool success = m_pCved->Init( m_pHdrBlk->GetLriFile(), cvedErr );
-		if( !success )
+		initialized = m_pCved->Init( m_pHdrBlk->GetLriFile(), cvedErr );
+		if( !initialized )
 		{
 			sprintf_s( m_lastError, sizeof(m_lastError),"Cved::Init failed: %s", cvedErr.c_str() );
-			return !(m_haveError=true);
 		}
-
-		initialized = m_pExternalObjCtrl->Initialize(static_cast<CHeaderDistriParseBlock&>(*m_pHdrBlk), static_cast<CVED::CCvedDistri*>(m_pCved)) //the configuration for localhost simulator will be identified
-					&& InitSimulation(parser, false);
+		else
+			initialized = m_pExternalObjCtrl->Initialize(static_cast<CHeaderDistriParseBlock&>(*m_pHdrBlk), static_cast<CVED::CCvedDistri*>(m_pCved)) //the configuration for localhost simulator will be identified
+						&& InitSimulation(parser, simulateEdoCtrl);
 	}
 
 	if (!initialized)
@@ -934,9 +942,6 @@ bool CScenarioControl::InitDistriADOCtrlSim(const char* fullPath)
 
 bool CScenarioControl::InitDistriEDOCtrlSim(const char* filePath, bool simulateOwnVeh)
 {
-	if( m_pExternalObjCtrl ) ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
-	m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK, edo_controller);
-
 	//
 	// Create a scenario name and perform translation.
 	//
@@ -1001,20 +1006,21 @@ bool CScenarioControl::InitDistriEDOCtrlSim(const char* filePath, bool simulateO
 		}
 		m_pHdrBlk = new CHeaderDistriParseBlock( *pBlock );
 
-
+		if( m_pExternalObjCtrl ) ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
+		m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK, edo_controller);
 
 		if( m_pCved ) delete m_pCved;
 		m_pCved = new CCvedEDOCtrl(m_pExternalObjCtrl);
 		m_pCved->Configure( CCved::eCV_SINGLE_USER, m_behavDeltaT, m_dynaMult );
 		string cvedErr;
-		bool success = m_pCved->Init( m_pHdrBlk->GetLriFile(), cvedErr );
-		if( !success )
+		initialized = m_pCved->Init( m_pHdrBlk->GetLriFile(), cvedErr );
+		if( !initialized )
 		{
 			sprintf_s( m_lastError, sizeof(m_lastError),"Cved::Init failed: %s", cvedErr.c_str() );
-			return !(m_haveError=true);
 		}
-		initialized = m_pExternalObjCtrl->Initialize(static_cast<CHeaderDistriParseBlock&>(*m_pHdrBlk), static_cast<CVED::CCvedDistri*>(m_pCved)) //the configuration for localhost simulator will be identified
-					&& InitSimulation(parser, simulateOwnVeh);
+		else
+			initialized = m_pExternalObjCtrl->Initialize(static_cast<CHeaderDistriParseBlock&>(*m_pHdrBlk), static_cast<CVED::CCvedDistri*>(m_pCved)) //the configuration for localhost simulator will be identified
+						&& InitSimulation(parser, simulateOwnVeh);
 	}
 
 	if (!initialized)
@@ -1024,6 +1030,7 @@ bool CScenarioControl::InitDistriEDOCtrlSim(const char* filePath, bool simulateO
 	}
 
 	return initialized;
+
 }
 
 bool CScenarioControl::InitSimulation( CSnoParser& parser, bool simulateOwnVeh )
@@ -1224,7 +1231,6 @@ bool CScenarioControl::InitSimulation( CSnoParser& parser, bool simulateOwnVeh )
 	TRACE(TEXT("Before adding blk:%s\n"), o.str());
 	if( simulateOwnVeh && m_pHdrBlk->HasOwnVeh() )
 	{
-
 		CAdoParseBlock block;
 		block.SetName("ExternalDriver");
 		block.SetSolName(m_cabSolObjName);
@@ -1233,7 +1239,7 @@ bool CScenarioControl::InitSimulation( CSnoParser& parser, bool simulateOwnVeh )
 		{
 			block.SetRoadPos(pos.GetString());
 			block.SetPath(m_pHdrBlk->GetPath());
-			parser.AddBlock(block);
+			parser.AddBlock(block); //HCSM doesn't create ado when running for an EDO controller
 		}
 
 	}
