@@ -4,7 +4,7 @@
 // Simulation Center, the University of Iowa and The University
 // of Iowa. All rights reserved.
 //
-// Version:      $Id: hcsmcollection.cxx,v 1.166 2016/10/28 20:50:44 IOWA\dheitbri Exp $
+// Version:      $Id: hcsmcollection.cxx,v 1.172 2018/09/07 14:30:20 IOWA\dheitbri Exp $
 // Author(s):    Omar Ahmad
 // Date:         July, 1998
 //
@@ -131,6 +131,8 @@ map<int, vector<float> >    CHcsmCollection::m_sDiGuyPathTimesInfo; //<optional 
 map<int, vector<char> >     CHcsmCollection::m_sDiGuyPathActionInfo; //<optional action at node for DiGuys
 
 vector<CDiGuyUpdateCommand> CHcsmCollection::m_sDiGuyCommandQueue;
+vector<CSpotlightCommand>   CHcsmCollection::m_spotLightCommands;
+vector<CDiguyRotationOverride> CHcsmCollection::m_sDiGuyJointOverrides;
 
 CActvLog         CHcsmCollection::m_sActvLog;
 int              CHcsmCollection::m_frame;
@@ -239,6 +241,48 @@ bool  CHcsmCollection::m_sMakeOwnVehicleChangeLanesLeft = false;
 bool  CHcsmCollection::m_sMakeOwnVehicleChangeLanesRight = false;
 float CHcsmCollection::m_sOwnVehicleSpeed = 55;
 
+CHcsmCollection::THeadlightSetting::THeadlightSetting(){
+	On = false;
+	Azimuth =0;
+	Elevation =0;
+	BeamWidth =0;
+	BeamHeight =0;
+	ConstCoeff =0;
+	LinearCoeff =0;
+	QuadCoeff =0;
+	HeightFade =0;
+	Intensity =0;
+	CutOffDist =0;
+	LampSeparation =0;
+	LampForwardOffset =0;
+}
+
+CDiguyRotationOverride::CDiguyRotationOverride() :HCSMid(-1) {};
+CDiguyRotationOverride::CDiguyRotationOverride(int id, const std::string& jointIn, const COrientation& ori):
+HCSMid(id), joint(jointIn), angles(ori){}
+CDiguyRotationOverride::CDiguyRotationOverride(const CDiguyRotationOverride& in) {
+	*this = in;
+};
+CDiguyRotationOverride::CDiguyRotationOverride(const CDiguyRotationOverride&& in) {
+	HCSMid = in.HCSMid;
+	joint = std::move(in.joint);
+	angles = std::move(in.angles);
+}
+
+CDiguyRotationOverride& CDiguyRotationOverride::operator= (const CDiguyRotationOverride& in) {
+	if (&in == this) this;
+	HCSMid = in.HCSMid;
+	joint = in.joint;
+	angles = in.angles;
+	return *this;
+}
+CDiguyRotationOverride& CDiguyRotationOverride::operator= (CDiguyRotationOverride&& in) {
+	if (&in == this) this;
+	HCSMid = in.HCSMid;
+	joint = in.joint;
+	angles = in.angles;
+	return *this;
+}
 //bool (CHcsmCollection::*ReadCellNumeric)(const string&, int, float&) = NULL;
 //////////////////////////////////////////////////////////////////////////////
 /// Construction/Destruction
@@ -385,7 +429,7 @@ CHcsmCollection::CHcsmCollection(
 	//
 	m_exprVariables.clear();
     m_randomGenerators.clear();
-    m_randomGenerators[cDefault] = shared_ptr<mt19937>(new std::mt19937(std::random_device()));
+    m_randomGenerators[cDefault] = shared_ptr<mt19937>(new std::mt19937(std::random_device()()));
 	m_exprPosVariables.clear();
 
 	m_sVisualDisplayText.clear();
@@ -821,7 +865,7 @@ void CHcsmCollection::ProcessHcsmDelete()
 			{
 				delete pHcsm;
 			}
-			catch ( cvCInternalError s )
+			catch ( const cvCInternalError &s ) 
 			{
 				// caught CVED exception
 				s.Notify();
@@ -829,7 +873,7 @@ void CHcsmCollection::ProcessHcsmDelete()
 				gout << ": caught CVED cvCInternalError while deleting ";
 				gout << hcsmName << " HCSM" << endl;
 			}
-			catch( cvCError s )
+			catch( const cvCError &s ) 
 			{
 				// print error message
 				s.Notify();
@@ -1147,13 +1191,21 @@ void CHcsmCollection::ExecuteAllHcsm()
 	//
 	// Process all pending delete Hcsm requests.
 	//
-	ProcessHcsmDelete();
-
+	try {
+		ProcessHcsmDelete();
+	}
+	catch (cvCInternalError e) {
+		gout << "Got Internal Error On ProcessHcsmDelete: " << e.m_msg << endl << "When running" << itr->second->GetName() << endl;
+	}
 	//
 	// Process all pending activate newly created Hcsm requests.
 	//
-	ProcessHcsmCreate();
-
+	try {
+		ProcessHcsmCreate();
+	}
+	catch (cvCInternalError e) {
+		gout << "Got Internal Error on ProcessHcsmCreate(): " << e.m_msg << endl << "When running" << itr->second->GetName() << endl;
+	}
 	//
 	// Increment the HCSM system frame number.
 	//
@@ -2227,8 +2279,24 @@ CHcsmCollection::SetHcsmActivateLog( CHcsm* pHcsm, const CPoint3D& cPos )
 		if( m_printActvLog )  event.Print( m_frame );
 	}
 }
+/////////////////////////////////////////////////////////////////////////////
+///\brief
 
-
+///   Gets the parameters for the headlights
+///
+///////////////////////////////////////////////////////////////////////////
+const CHcsmCollection::THeadlightSetting& 
+CHcsmCollection::GetHeadLightSettings() const{
+    return m_ownshipHeadlights;
+}
+/////////////////////////////////////////////////////////////////////////////
+///\brief
+///   Sets the parameters for the headlights
+///
+///////////////////////////////////////////////////////////////////////////
+void CHcsmCollection::SetHeadLightSettings(const THeadlightSetting& settings){
+    m_ownshipHeadlights = settings;
+}
 //////////////////////////////////////////////////////////////////////////////
 //
 // Description:  Sets the CVED creation log.
@@ -2420,7 +2488,7 @@ CHcsmCollection::SetButtonSettingLog( CHcsm* pHcsm, const string& cButtonName )
 void
    CHcsmCollection::CreateRandomNumberGenerator( const string& cName, const vector<long> &seed ){
     if (seed.size() == 0){
-        m_randomGenerators[cName] = shared_ptr<mt19937>(new std::mt19937(std::random_device()));
+        m_randomGenerators[cName] = shared_ptr<mt19937>(new std::mt19937(std::random_device()()));
     }else{
 		std::seed_seq seq(seed.begin(),seed.end());
         m_randomGenerators[cName] = shared_ptr<mt19937>(new std::mt19937(seq));
@@ -2504,7 +2572,7 @@ void CHcsmCollection::ClearVariables(){
 	m_exprPosVariables.clear();
     m_varQueues.clear();
     m_randomGenerators.clear();
-    m_randomGenerators[cDefault] = shared_ptr<mt19937>(new std::mt19937(std::random_device()));
+    m_randomGenerators[cDefault] = shared_ptr<mt19937>(new std::mt19937(std::random_device()()));
 }
 ////////////////////////////////////////////////////////////////////////////////////////////
 ///\brief
@@ -2897,6 +2965,23 @@ void CHcsmCollection::AddDiGuyCommand(const CDiGuyUpdateCommand & command){
 	m_sDiGuyCommandQueue.push_back(command);
 	m_DiGuyPathCriticalSection.UnLock();
 }
+
+
+void CHcsmCollection::AddDiGuyJointOverride(const CDiguyRotationOverride& item) {
+	m_DiGuyPathCriticalSection.Lock();
+	m_sDiGuyJointOverrides.push_back(item);
+	m_DiGuyPathCriticalSection.UnLock();
+}
+void CHcsmCollection::GetDiGuyJointOverrides(vector<CDiguyRotationOverride>& overrides) {
+	m_DiGuyPathCriticalSection.Lock();
+	overrides = m_sDiGuyJointOverrides;
+	m_DiGuyPathCriticalSection.UnLock();
+}
+void CHcsmCollection::clearDiGuyJointOverides() {
+	m_DiGuyPathCriticalSection.Lock();
+	m_sDiGuyJointOverrides.clear();
+	m_DiGuyPathCriticalSection.UnLock();
+}
 void CHcsmCollection::GetDiGuyCommandQueue(vector<CDiGuyUpdateCommand>& commands) {
 	m_DiGuyPathCriticalSection.Lock();
 	commands = m_sDiGuyCommandQueue;
@@ -2906,6 +2991,21 @@ void CHcsmCollection::clearDiGuyCommandQueue(){
 	m_DiGuyPathCriticalSection.Lock();
 	m_sDiGuyCommandQueue.clear();
 	m_DiGuyPathCriticalSection.UnLock();
+}
+void  CHcsmCollection::AddSpotlightCommand(const CSpotlightCommand& cmd){
+    m_sLockVisualOptions.Lock();
+    m_spotLightCommands.push_back(cmd);
+    m_sLockVisualOptions.UnLock();
+}
+void CHcsmCollection::GetSpotlightQueue(vector<CSpotlightCommand>& commands) {
+	m_sLockVisualOptions.Lock();
+	commands = m_spotLightCommands;
+	m_sLockVisualOptions.UnLock();
+}
+void CHcsmCollection::ClearSpotlightQueue() {
+	m_sLockVisualOptions.Lock();
+	m_spotLightCommands.clear();
+	m_sLockVisualOptions.UnLock();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///\brief

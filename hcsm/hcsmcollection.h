@@ -4,7 +4,7 @@
  * Simulation Center, the University of Iowa and The University
  * of Iowa. All rights reserved.
  *
- * Version:      $Id: hcsmcollection.h,v 1.138 2016/10/28 20:50:44 IOWA\dheitbri Exp $
+ * Version:      $Id: hcsmcollection.h,v 1.143 2018/09/07 14:30:20 IOWA\dheitbri Exp $
  * Author(s):    Omar Ahmad
  * Date:         July, 1998
  *
@@ -42,6 +42,8 @@ using namespace std;
 #include "point3d.h"
 #include "path.h"
 #include "EnvVar.h"
+#include "RendererInterface.h"
+
 #define AUDIO_TRIGGER_BYPASS
 
 using namespace CVED;
@@ -148,6 +150,9 @@ typedef struct
 } TCabVisualOperations;
 const int cMAX_VISUAL_OPERATIONS = 10;
 
+
+
+
 typedef struct
 {
 	string         fileName;
@@ -166,6 +171,11 @@ typedef struct
 	char	label[cMAX_VARNAME_SIZE];
 	char	group[cMAX_VARNAME_SIZE];
 } TGraphVar;
+typedef struct
+{
+    string setting;
+    string value;
+} TSetEnvConditionCommand;
 
 class COnScreenGraph 
 {
@@ -192,6 +202,20 @@ public:
 	}
 
 };
+class CDiguyRotationOverride
+{
+public:
+	CDiguyRotationOverride();
+	CDiguyRotationOverride(int, const std::string&, const COrientation&);
+	CDiguyRotationOverride(const CDiguyRotationOverride&);
+	CDiguyRotationOverride& operator= (const CDiguyRotationOverride&);
+	CDiguyRotationOverride& operator= (CDiguyRotationOverride&&);
+	CDiguyRotationOverride(const CDiguyRotationOverride&&);
+	int                     HCSMid;
+	string                  joint;
+	COrientation            angles;
+};
+
 class CDiGuyUpdateCommand{
 public:
 	unsigned	m_Id;					///< User specified unique identifier
@@ -207,7 +231,7 @@ public:
 		memset(m_dataLoad,0,sizeof(m_dataLoad));
 	}
 };
-static_assert(std::has_trivial_copy<CDiGuyUpdateCommand>::value == true,"CDiGuyCommand must support shallow copy");
+static_assert(std::is_trivially_copy_constructible<CDiGuyUpdateCommand>::value == true,"CDiGuyCommand must support shallow copy");
 typedef bool (*TReadCellFuncptr)(const string&, int, float&);
 
 const int cMAX_ROOT_HCSM = 1200;
@@ -301,6 +325,24 @@ public:
 //	CHcsmCollection& operator=( const CHcsmCollection& );
 	virtual ~CHcsmCollection();
 
+
+    typedef struct THeadlightSetting{
+        THeadlightSetting();
+	    bool   On;
+	    double Azimuth;
+	    double Elevation;
+	    double BeamWidth;
+	    double BeamHeight;
+	    double ConstCoeff;
+	    double LinearCoeff;
+	    double QuadCoeff;
+	    double HeightFade;
+	    double Intensity;
+	    double CutOffDist;
+	    double LampSeparation;
+	    double LampForwardOffset;
+    } THeadlightSetting;
+
 	inline int NumHcsm() const;
 	inline int GetFrame() const;
 	inline double GetTimeStepDuration() const;
@@ -339,6 +381,8 @@ public:
 				);
 	void SetHcsmDeleteLog( CHcsm* pHcsm, const CPoint3D& cPos );
 	void SetHcsmActivateLog( CHcsm* pHcsm, const CPoint3D& cPos );
+    const THeadlightSetting& GetHeadLightSettings() const;
+    void SetHeadLightSettings(const THeadlightSetting&);
 	static void SetCvedCreateLog(
 				CHcsm* pHcsm,
 				int cvedId,
@@ -443,7 +487,13 @@ public:
 								 vector<float>&);
 	static void AddDiGuyCommand(const CDiGuyUpdateCommand &);
 	static void GetDiGuyCommandQueue(vector<CDiGuyUpdateCommand>& );
+	static void AddDiGuyJointOverride(const CDiguyRotationOverride&);
+	static void GetDiGuyJointOverrides(vector<CDiguyRotationOverride>&);
 	static void clearDiGuyCommandQueue();
+	static void clearDiGuyJointOverides();
+    static void AddSpotlightCommand(const CSpotlightCommand&);
+    static void GetSpotlightQueue(vector<CSpotlightCommand>& commands) ;
+    static void ClearSpotlightQueue() ;
 	void SetButtonSettingLog( CHcsm* pHcsm, const string& cDialButtonName );
 
 	static void SetExprVariable( const string& cName, double value );
@@ -524,7 +574,10 @@ private:
 	static map<int, vector<float> > m_sDiGuyPathTimesInfo; //<optional time at node for DiGuys
 	static map<int, vector<char> > m_sDiGuyPathActionInfo; //<optional action at node for DiGuys
 	static vector<CDiGuyUpdateCommand> m_sDiGuyCommandQueue;
-	vector<TPreloadData> m_preloadFiles;
+	static vector<CDiguyRotationOverride> m_sDiGuyJointOverrides;
+	static vector<CSpotlightCommand> m_spotLightCommands;
+	
+    vector<TPreloadData> m_preloadFiles;
 	map<int, TPreloadMapData> m_preloadHandleMap;
 	int m_preloadHandleCounter;
 
@@ -532,6 +585,8 @@ private:
 	double m_currUpdateTime;    //< Current frame update time
 
 	__int64 m_lastTicks;        //< CPU ticks since last update.
+
+    THeadlightSetting m_ownshipHeadlights;
 
 	static HANDLE m_sLastGoodLocationMutex; //< Mutex Loc for last good location
 	static float  m_sLastGoodLocation[3]; //< last location the Ext Driver was on the Path
@@ -626,6 +681,9 @@ public:
 
 	static TSetSwitchCmd m_sSetSwitchCmds[cMAX_SCENARIO_SET_SWITCH];
 	static int m_sSetSwitchCmdsDataSize;
+
+    static TSetEnvConditionCommand m_TSetEnvConditionCommand[cMAX_SET_UNIFORM_CELL_EVENTS];
+    static int m_sSetEnvConditionCommands;
 
     static CHcsmStaticLock m_sLockVisualOptions;
 

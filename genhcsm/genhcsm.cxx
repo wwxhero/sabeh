@@ -32,6 +32,7 @@ CDdo::CDdo(
     m_dialDependent( pRootCollection, "Dependent" ),
     m_dialSpeedOverRide( pRootCollection, "SpeedOverRide" ),
     m_dialDiGuyAction( pRootCollection, "DiGuyAction" ),
+    m_dialDiGuyJointOverride( pRootCollection, "DiGuyJointOverride" ),
     m_monitorRoadPos( pRootCollection, "RoadPos" )
 {
 
@@ -53,6 +54,7 @@ CDdo::CDdo( const CDdo& objToCopy ):
     m_dialDependent( objToCopy.m_pRootCollection, objToCopy.m_dialDependent.GetName() ),
     m_dialSpeedOverRide( objToCopy.m_pRootCollection, objToCopy.m_dialSpeedOverRide.GetName() ),
     m_dialDiGuyAction( objToCopy.m_pRootCollection, objToCopy.m_dialDiGuyAction.GetName() ),
+    m_dialDiGuyJointOverride( objToCopy.m_pRootCollection, objToCopy.m_dialDiGuyJointOverride.GetName() ),
     m_monitorRoadPos( objToCopy.m_pRootCollection, objToCopy.m_monitorRoadPos.GetName() )
 {
 
@@ -278,6 +280,27 @@ void CDdo::SetDialDiGuyActionNoValue()
 
 }
 
+string CDdo::GetDialDiGuyJointOverride()
+{
+
+    return m_dialDiGuyJointOverride.GetValue();
+
+}
+
+void CDdo::SetDialDiGuyJointOverride( string value )
+{
+
+    m_dialDiGuyJointOverride.SetValue( value );
+
+}
+
+void CDdo::SetDialDiGuyJointOverrideNoValue()
+{
+
+    m_dialDiGuyJointOverride.SetNoValue();
+
+}
+
 bool CDdo::SetDialByName( const string& dialName, const int& value )
 {
 
@@ -330,6 +353,12 @@ bool CDdo::SetDialByName( const string& dialName, const string& value )
     if ( dialName == m_dialDiGuyAction.GetName() ) {
         
         m_dialDiGuyAction.SetValue( value );
+        return true;
+        
+    }
+    if ( dialName == m_dialDiGuyJointOverride.GetName() ) {
+        
+        m_dialDiGuyJointOverride.SetValue( value );
         return true;
         
     }
@@ -393,6 +422,12 @@ bool CDdo::SetDialByNameStr( const string& dialName, const string& value )
         return true;
         
     }
+    if ( dialName == m_dialDiGuyJointOverride.GetName() ) {
+        
+        m_dialDiGuyJointOverride.SetValueStr( value );
+        return true;
+        
+    }
     
     return false;
 
@@ -429,6 +464,11 @@ bool CDdo::IsDialActiveByNameStr( const string& dialName )
     if ( dialName == m_dialDiGuyAction.GetName() ) {
         
         return m_dialDiGuyAction.HasValue();
+        
+    }
+    if ( dialName == m_dialDiGuyJointOverride.GetName() ) {
+        
+        return m_dialDiGuyJointOverride.HasValue();
         
     }
     
@@ -475,6 +515,12 @@ bool CDdo::ResetDialByName( const string& dialName )
         return true;
         
     }
+    if ( dialName == m_dialDiGuyJointOverride.GetName() ) {
+        
+        m_dialDiGuyJointOverride.Reset();
+        return true;
+        
+    }
     
     return false;
 
@@ -515,6 +561,13 @@ bool CDdo::GetMonitorByName( const string& monitorName, CRoadPos* pValue )
         
     }
     
+    return false;
+
+}
+
+bool CDdo::GetMonitorByName( const string& monitorName, float* pValue )
+{
+
     return false;
 
 }
@@ -1925,9 +1978,14 @@ CAdo::CAdo(
     m_buttonTurnLeft( pRootCollection, "TurnLeft" ),
     m_buttonTurnRight( pRootCollection, "TurnRight" ),
     m_buttonProjectAndResetLaneOffset( pRootCollection, "ProjectAndResetLaneOffset" ),
+    m_buttonAutoControlBrakeLightsOn( pRootCollection, "AutoControlBrakeLightsOn" ),
+    m_buttonAutoControlBrakeLightsOff( pRootCollection, "AutoControlBrakeLightsOff" ),
+    m_buttonInhibitLaneChangeOn( pRootCollection, "InhibitLaneChangeOn" ),
+    m_buttonInhibitLaneChangeOff( pRootCollection, "InhibitLaneChangeOff" ),
     m_dialAudioState( pRootCollection, "AudioState" ),
     m_dialForcedLaneOffset( pRootCollection, "ForcedLaneOffset" ),
     m_dialForcedVelocity( pRootCollection, "ForcedVelocity" ),
+    m_dialForcedSteeringAngle( pRootCollection, "ForcedSteeringAngle" ),
     m_dialImStop( pRootCollection, "ImStop" ),
     m_dialInhibitLaneChange( pRootCollection, "InhibitLaneChange" ),
     m_dialLaneChange( pRootCollection, "LaneChange" ),
@@ -1936,6 +1994,7 @@ CAdo::CAdo(
     m_dialTargetVelocity( pRootCollection, "TargetVelocity" ),
     m_dialVisualState( pRootCollection, "VisualState" ),
     m_monitorRoadPos( pRootCollection, "RoadPos" ),
+    m_monitorDistanceToNextHldOffset( pRootCollection, "DistanceToNextHldOffset" ),
     m_monitorTargCrdr( pRootCollection, "TargCrdr" ),
     m_monitorStoppedBehindObj( pRootCollection, "StoppedBehindObj" ),
     m_monitorHasStopSignTarget( pRootCollection, "HasStopSignTarget" ),
@@ -1965,9 +2024,14 @@ CAdo::CAdo( const CAdo& objToCopy ):
     m_buttonTurnLeft( objToCopy.m_pRootCollection, objToCopy.m_buttonTurnLeft.GetName() ),
     m_buttonTurnRight( objToCopy.m_pRootCollection, objToCopy.m_buttonTurnRight.GetName() ),
     m_buttonProjectAndResetLaneOffset( objToCopy.m_pRootCollection, objToCopy.m_buttonProjectAndResetLaneOffset.GetName() ),
+    m_buttonAutoControlBrakeLightsOn( objToCopy.m_pRootCollection, objToCopy.m_buttonAutoControlBrakeLightsOn.GetName() ),
+    m_buttonAutoControlBrakeLightsOff( objToCopy.m_pRootCollection, objToCopy.m_buttonAutoControlBrakeLightsOff.GetName() ),
+    m_buttonInhibitLaneChangeOn( objToCopy.m_pRootCollection, objToCopy.m_buttonInhibitLaneChangeOn.GetName() ),
+    m_buttonInhibitLaneChangeOff( objToCopy.m_pRootCollection, objToCopy.m_buttonInhibitLaneChangeOff.GetName() ),
     m_dialAudioState( objToCopy.m_pRootCollection, objToCopy.m_dialAudioState.GetName() ),
     m_dialForcedLaneOffset( objToCopy.m_pRootCollection, objToCopy.m_dialForcedLaneOffset.GetName() ),
     m_dialForcedVelocity( objToCopy.m_pRootCollection, objToCopy.m_dialForcedVelocity.GetName() ),
+    m_dialForcedSteeringAngle( objToCopy.m_pRootCollection, objToCopy.m_dialForcedSteeringAngle.GetName() ),
     m_dialImStop( objToCopy.m_pRootCollection, objToCopy.m_dialImStop.GetName() ),
     m_dialInhibitLaneChange( objToCopy.m_pRootCollection, objToCopy.m_dialInhibitLaneChange.GetName() ),
     m_dialLaneChange( objToCopy.m_pRootCollection, objToCopy.m_dialLaneChange.GetName() ),
@@ -1976,6 +2040,7 @@ CAdo::CAdo( const CAdo& objToCopy ):
     m_dialTargetVelocity( objToCopy.m_pRootCollection, objToCopy.m_dialTargetVelocity.GetName() ),
     m_dialVisualState( objToCopy.m_pRootCollection, objToCopy.m_dialVisualState.GetName() ),
     m_monitorRoadPos( objToCopy.m_pRootCollection, objToCopy.m_monitorRoadPos.GetName() ),
+    m_monitorDistanceToNextHldOffset( objToCopy.m_pRootCollection, objToCopy.m_monitorDistanceToNextHldOffset.GetName() ),
     m_monitorTargCrdr( objToCopy.m_pRootCollection, objToCopy.m_monitorTargCrdr.GetName() ),
     m_monitorStoppedBehindObj( objToCopy.m_pRootCollection, objToCopy.m_monitorStoppedBehindObj.GetName() ),
     m_monitorHasStopSignTarget( objToCopy.m_pRootCollection, objToCopy.m_monitorHasStopSignTarget.GetName() ),
@@ -2212,6 +2277,34 @@ bool CAdo::GetButtonProjectAndResetLaneOffset()
 
 }
 
+bool CAdo::GetButtonAutoControlBrakeLightsOn()
+{
+
+    return m_buttonAutoControlBrakeLightsOn.IsButtonPressed();
+
+}
+
+bool CAdo::GetButtonAutoControlBrakeLightsOff()
+{
+
+    return m_buttonAutoControlBrakeLightsOff.IsButtonPressed();
+
+}
+
+bool CAdo::GetButtonInhibitLaneChangeOn()
+{
+
+    return m_buttonInhibitLaneChangeOn.IsButtonPressed();
+
+}
+
+bool CAdo::GetButtonInhibitLaneChangeOff()
+{
+
+    return m_buttonInhibitLaneChangeOff.IsButtonPressed();
+
+}
+
 bool CAdo::SetButtonByName( const string& buttonName )
 {
 
@@ -2246,6 +2339,34 @@ bool CAdo::SetButtonByName( const string& buttonName )
     if ( buttonName == m_buttonProjectAndResetLaneOffset.GetName() ) {
         
         m_buttonProjectAndResetLaneOffset.PressButton();
+        return true;
+        
+    }
+    
+    if ( buttonName == m_buttonAutoControlBrakeLightsOn.GetName() ) {
+        
+        m_buttonAutoControlBrakeLightsOn.PressButton();
+        return true;
+        
+    }
+    
+    if ( buttonName == m_buttonAutoControlBrakeLightsOff.GetName() ) {
+        
+        m_buttonAutoControlBrakeLightsOff.PressButton();
+        return true;
+        
+    }
+    
+    if ( buttonName == m_buttonInhibitLaneChangeOn.GetName() ) {
+        
+        m_buttonInhibitLaneChangeOn.PressButton();
+        return true;
+        
+    }
+    
+    if ( buttonName == m_buttonInhibitLaneChangeOff.GetName() ) {
+        
+        m_buttonInhibitLaneChangeOff.PressButton();
         return true;
         
     }
@@ -2314,6 +2435,27 @@ void CAdo::SetDialForcedVelocityNoValue()
 {
 
     m_dialForcedVelocity.SetNoValue();
+
+}
+
+string CAdo::GetDialForcedSteeringAngle()
+{
+
+    return m_dialForcedSteeringAngle.GetValue();
+
+}
+
+void CAdo::SetDialForcedSteeringAngle( string value )
+{
+
+    m_dialForcedSteeringAngle.SetValue( value );
+
+}
+
+void CAdo::SetDialForcedSteeringAngleNoValue()
+{
+
+    m_dialForcedSteeringAngle.SetNoValue();
 
 }
 
@@ -2513,6 +2655,12 @@ bool CAdo::SetDialByName( const string& dialName, const string& value )
         return true;
         
     }
+    if ( dialName == m_dialForcedSteeringAngle.GetName() ) {
+        
+        m_dialForcedSteeringAngle.SetValue( value );
+        return true;
+        
+    }
     if ( dialName == m_dialLaneChange.GetName() ) {
         
         m_dialLaneChange.SetValue( value );
@@ -2585,6 +2733,12 @@ bool CAdo::SetDialByNameStr( const string& dialName, const string& value )
         return true;
         
     }
+    if ( dialName == m_dialForcedSteeringAngle.GetName() ) {
+        
+        m_dialForcedSteeringAngle.SetValueStr( value );
+        return true;
+        
+    }
     if ( dialName == m_dialImStop.GetName() ) {
         
         m_dialImStop.SetValueStr( value );
@@ -2650,6 +2804,11 @@ bool CAdo::IsDialActiveByNameStr( const string& dialName )
         return m_dialForcedVelocity.HasValue();
         
     }
+    if ( dialName == m_dialForcedSteeringAngle.GetName() ) {
+        
+        return m_dialForcedSteeringAngle.HasValue();
+        
+    }
     if ( dialName == m_dialImStop.GetName() ) {
         
         return m_dialImStop.HasValue();
@@ -2708,6 +2867,12 @@ bool CAdo::ResetDialByName( const string& dialName )
     if ( dialName == m_dialForcedVelocity.GetName() ) {
         
         m_dialForcedVelocity.Reset();
+        return true;
+        
+    }
+    if ( dialName == m_dialForcedSteeringAngle.GetName() ) {
+        
+        m_dialForcedSteeringAngle.Reset();
         return true;
         
     }
@@ -2776,6 +2941,27 @@ void CAdo::SetMonitorRoadPosNoValue()
 {
 
     m_monitorRoadPos.SetNoValue();
+
+}
+
+float CAdo::GetMonitorDistanceToNextHldOffset()
+{
+
+    return m_monitorDistanceToNextHldOffset.GetValue();
+
+}
+
+void CAdo::SetMonitorDistanceToNextHldOffset( float value )
+{
+
+    m_monitorDistanceToNextHldOffset.SetValue( value );
+
+}
+
+void CAdo::SetMonitorDistanceToNextHldOffsetNoValue()
+{
+
+    m_monitorDistanceToNextHldOffset.SetNoValue();
 
 }
 
@@ -2892,6 +3078,24 @@ bool CAdo::GetMonitorByName( const string& monitorName, CRoadPos* pValue )
         bool retVal = m_monitorRoadPos.HasValue();
         if ( retVal ) {
             *pValue = m_monitorRoadPos.GetValue();
+        }
+        
+        return retVal;
+        
+    }
+    
+    return false;
+
+}
+
+bool CAdo::GetMonitorByName( const string& monitorName, float* pValue )
+{
+
+    if ( monitorName == m_monitorDistanceToNextHldOffset.GetName() ) {
+        
+        bool retVal = m_monitorDistanceToNextHldOffset.HasValue();
+        if ( retVal ) {
+            *pValue = m_monitorDistanceToNextHldOffset.GetValue();
         }
         
         return retVal;
@@ -8364,6 +8568,13 @@ bool CDriverMirror::GetMonitorByName( const string& monitorName, CRoadPos* pValu
         
     }
     
+    return false;
+
+}
+
+bool CDriverMirror::GetMonitorByName( const string& monitorName, float* pValue )
+{
+
     return false;
 
 }

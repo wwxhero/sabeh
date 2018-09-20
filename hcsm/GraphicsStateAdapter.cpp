@@ -4,7 +4,7 @@
  * Simulation Center, the University of Iowa and The University
  * of Iowa. All rights reserved.
  *
- * Version:      $Id: GraphicsStateAdapter.cpp,v 1.11 2016/10/28 20:52:46 IOWA\dheitbri Exp $
+ * Version:      $Id: GraphicsStateAdapter.cpp,v 1.21 2018/09/12 20:41:01 IOWA\dheitbri Exp $
  *
  * Author(s):    D.A. Heitbrink
  *
@@ -19,13 +19,14 @@
 #include "GraphicsStateAdapter.h"
 
 #include "ScenarioControl.h"
-#include "RendererInterface.h"
+
 
 #include "SplineHermite.h"
 #include <sstream>
 
 #include "util.h"
 const double M_PI = 3.14159265;
+const float M_PIf = 3.14159265f;
 const int MAX_OBJ = 300;
 
 CGraphicsStateAdapter::CGraphicsStateAdapter(CRendererIface *render,CScenarioControl* scenario ):
@@ -67,10 +68,10 @@ CGraphicsStateAdapter::AddVisualCommands(){
 				        float* ptr  = (float*)&uniformCmd.m_data[0];
 				
 				        auto &data = CHcsmCollection::m_sScenarioWriteUniformData[i].floatData;
-				        int elemCnt = data.size();
+				        size_t elemCnt = data.size();
 				        if (elemCnt > 16) elemCnt = 16;
-				        uniformCmd.m_size = elemCnt;
-				        for (int i =0; i < (int)data.size(); i++){
+				        uniformCmd.m_size = (unsigned int)elemCnt;
+				        for (size_t i =0; i < data.size(); i++){
 					        ptr[i]=data[i];
 				        }
 			        }
@@ -80,10 +81,10 @@ CGraphicsStateAdapter::AddVisualCommands(){
 				        int* ptr  = (int*)&uniformCmd.m_data[0];
 			
 				        auto &data = CHcsmCollection::m_sScenarioWriteUniformData[i].intData;
-				        int elemCnt = data.size();
+				        size_t elemCnt = data.size();
 				        if (elemCnt > 16) elemCnt = 16;
-				        uniformCmd.m_size = elemCnt;
-				        for (int i =0; i < (int)data.size(); i++){
+				        uniformCmd.m_size = (unsigned int)elemCnt;
+				        for (size_t i =0; i < data.size(); i++){
 					        ptr[i]=data[i];
 				        }
 			        }break;
@@ -92,10 +93,10 @@ CGraphicsStateAdapter::AddVisualCommands(){
 				        int* ptr  = (int*)&uniformCmd.m_data[0];
 			
 				        auto &data = CHcsmCollection::m_sScenarioWriteUniformData[i].shortData;
-				        int elemCnt = data.size();
+				        size_t elemCnt = data.size();
 				        if (elemCnt > 16) elemCnt = 16;
-				        uniformCmd.m_size = elemCnt;
-				        for (int i =0; i < (int)data.size(); i++){
+				        uniformCmd.m_size = (unsigned int)elemCnt;
+				        for (size_t i =0; i < data.size(); i++){
 					        ptr[i]=data[i];
 				        }
 			        }break;
@@ -139,17 +140,13 @@ CGraphicsStateAdapter::AddVisualCommands(){
 		
 	        }
 	        CHcsmCollection::m_sAttachShaderCmdsDataSize = 0;
-
-	//static TSetSwitchCmd m_sSetSwitchCmds[cMAX_SCENARIO_SET_SWITCH];
-	//static int m_sSetSwitchCmdsDataSize;
-            //SetSwitch(const CSetSwitch&);
 	        CSetSwitch switchCmd;
             for ( int i =0; i <CHcsmCollection::m_sSetSwitchCmdsDataSize; i++){
 		        memset(&switchCmd,0,sizeof(switchCmd));
                 //m_Name
+				auto & currCommand = CHcsmCollection::m_sSetSwitchCmds[i];
                 switchCmd.m_switchId = CHcsmCollection::m_sSetSwitchCmds[i].id;
                 //memcpy(switchCmd.m_Name
-
                 size_t size = CHcsmCollection::m_sSetSwitchCmds[i].switchName.size();
 		        if (size > sizeof(switchCmd.m_Name))
 			        continue;
@@ -162,12 +159,24 @@ CGraphicsStateAdapter::AddVisualCommands(){
 		        auto& ids = CHcsmCollection::m_sSetSwitchCmds[i].cvedIDs;
 		        for (unsigned int i = 0; i < ids.size(); i++){
 			        switchCmd.m_id = ids[i];
+				    if (!cved.IsExplicitObj( switchCmd.m_id ) &&(
+				    	currCommand.switchName == "Self" ||currCommand.switchName == ""))
+				    {
+				        SetLRIObjectStates( switchCmd.m_id, switchCmd.m_switchId);
+				        continue;
+				    }
                     m_pRender->SetSwitch(switchCmd);	
 		        }
                 ids.clear();
 		
 	        }
+            vector<CSpotlightCommand> commands;
 	        CHcsmCollection::m_sSetSwitchCmdsDataSize = 0;
+            CHcsmCollection::GetSpotlightQueue(commands);
+            for (auto itr = commands.begin(); itr != commands.end(); itr++){
+                m_pRender->AddSpotlightCommand(*itr);
+            }
+            CHcsmCollection::ClearSpotlightQueue();
         }catch(...){
         }
         CHcsmCollection::m_sLockVisualOptions.UnLock();
@@ -189,6 +198,14 @@ CGraphicsStateAdapter::CreateObject(int cvedId)
 				return;
 			}
 		}
+	}
+	if (objType == eCV_VIRTUAL_OBJECT){
+        cvTObjState objState;
+        cved.GetObjStateInstant( cvedId, objState );
+        vector<float> params;
+        params.push_back(objState.virtualObjectState.ParseBlockID);
+        m_pRender->CreateVirtualOject(cvedId,objState.virtualObjectState.ParseBlockID);
+        return;
 	}
 	cved.GetObjOption( cvedId, option );
 	bool gotInfo = GetCvedObjCigiInfo( cved, cvedId, uniqueId, modelType );
@@ -249,7 +266,6 @@ CGraphicsStateAdapter::CreateDiGuy(int cvedId, int solId){
 	int size;
 	cvTObjState objState;
 	float objPos[3], objRot[3];
-
 	char		Model[64];			 
 	char		Apperence[64];		 			 		 
 	int			Flag[2] = {0,0};				 
@@ -267,7 +283,7 @@ CGraphicsStateAdapter::CreateDiGuy(int cvedId, int solId){
 		startAtCreation  = pDDO->GetAnimationState();
 	}
 	Flag[0] = (int)startAtCreation;
-
+	Flag[1] = (int)objState.trajFollowerState.classType - eCV_DIGUY;
 	objPos[0] = (float)objState.anyState.position.x;
 	objPos[1] = (float)objState.anyState.position.y;
 	objPos[2] = (float)objState.anyState.position.z;
@@ -300,7 +316,7 @@ CGraphicsStateAdapter::CreateDiGuy(int cvedId, int solId){
 			for (auto itr = tTimes.begin(); itr != tTimes.end() && cnt < cMAX_PATH_PNTS; itr++,cnt++){
 				Durration[cnt] = *itr; 
 			}
-			int numObject = std::min((size_t)cMAX_PATH_PNTS*4,tpath.size());
+			int numObject = (int)std::min((size_t)cMAX_PATH_PNTS*4,tpath.size());
 			m_pRender->CreateDiGuyObject(
 				Model,
 				Apperence,
@@ -315,13 +331,43 @@ CGraphicsStateAdapter::CreateDiGuy(int cvedId, int solId){
 		}
 	}
 }
+void SetVirtualObject(
+    CRendererIface *pRender,
+    const cvTObjState::VirtualObjectState &objState,
+    int id)
+{
+    CVirtualObjectCommand cmd;
+    cmd.m_data.overlayPosition[0]=(float)objState.overlayPosition.x;
+	cmd.m_data.overlayPosition[1]=(float)objState.overlayPosition.y;
+	cmd.m_data.overlayPosition[2]=(float)objState.overlayPosition.z;
+	cmd.m_data.rotation=          objState.rotation;         
+	cmd.m_data.objType=           objState.objType;          
+	cmd.m_data.color[0]=		  objState.color[0];
+	cmd.m_data.color[1]=		  objState.color[1];
+	cmd.m_data.color[2]=		  objState.color[2];
+	cmd.m_data.color[3]=		  objState.color[3];
+	cmd.m_data.colorBorder[0]=    objState.colorBorder[0];
+	cmd.m_data.colorBorder[1]=    objState.colorBorder[1];  
+	cmd.m_data.colorBorder[2]=    objState.colorBorder[2];  
+	cmd.m_data.colorBorder[3]=    objState.colorBorder[3];  
+	cmd.m_data.scale[0]=          objState.scale[0];
+	cmd.m_data.scale[1]=          objState.scale[1];   
+	cmd.m_data.parentId=          objState.parentId;         
+	cmd.m_data.StateIndex=        objState.StateIndex;       
+    cmd.m_data.DrawScreen=        objState.DrawScreen;       
+	cmd.m_data.ParseBlockID=      objState.ParseBlockID;     
+    cmd.m_data.lightID=           objState.lightID;     
+    cmd.m_id= id;
+    pRender->VirtualObjectCommand(cmd);
+}
+
 bool 
 CGraphicsStateAdapter::UpdateDynamicObjects(){
 	int				currList[MAX_OBJ], currCount;
 	int				newList[MAX_OBJ], newCount;
 	int				delList[MAX_OBJ], delCount;
 
-	int				i, cvedId, uniqueId, option, modelType;
+	int				i, cvedId, uniqueId, option;
 	CCved&          cved = m_pScen->GetCved();
 
 	CPoint3D  pos;
@@ -341,6 +387,7 @@ CGraphicsStateAdapter::UpdateDynamicObjects(){
 	mask.Clear();
 	mask.Set( eCV_TRAJ_FOLLOWER );
 	mask.Set( eCV_VEHICLE );
+    mask.Set( eCV_VIRTUAL_OBJECT);
 
 	int rcode = m_pScen->GetNewAndDeletedDynamicObjects(
 				mask,
@@ -359,7 +406,14 @@ CGraphicsStateAdapter::UpdateDynamicObjects(){
 	{
 		cvedId = changedObjs[i];
 		cved.GetObjOption( cvedId, option );
-		
+		auto objType = cved.GetObjType(cvedId);
+	    if (objType == eCV_VIRTUAL_OBJECT){
+            cvTObjState objState;
+            cved.GetObjStateInstant( cvedId, objState );
+            SetVirtualObject(m_pRender,objState.virtualObjectState,cvedId);
+            continue;
+	    }
+
 		if( cved.IsExplicitObj( cvedId ) )
 		{
 			// Explicit static object
@@ -415,7 +469,15 @@ CGraphicsStateAdapter::UpdateDynamicObjects(){
 	m_pScen->GetObjectState( currList, m_state, currCount );
 	for( i = 0; i < currCount; i++ ) {
 		cvedId = currList[i];
-		bool notOwnVeh = strcmp( cved.GetObjName(cvedId), "Driver" )>0;
+		auto cstr = cved.GetObjName(cvedId);
+		auto objType = cved.GetObjType(cvedId);
+	    if (objType == eCV_VIRTUAL_OBJECT){
+            cvTObjState objState;
+            cved.GetObjStateInstant( cvedId, objState );
+            SetVirtualObject(m_pRender,objState.virtualObjectState,cvedId);
+            continue;
+	    }
+		bool notOwnVeh = ( cstr!= nullptr && string(cstr) != "Driver" );
 		if( notOwnVeh ) {
 			uniqueId = cvedId;
 			double posori[6]; 
@@ -452,16 +514,28 @@ CGraphicsStateAdapter::UpdateDynamicObjects(){
 
 			// temporary precreation code
 			const char* objName = cved.GetObjName(cvedId);
-
-			if ( objName[0] == 'P' && objName[1] == 'A' )
-			{
-//				printf("Precreated model %s, not updated\n", objName);
-			}
-			else
-				SetMovingObjectStates( cvedId, -1, uniqueId, posori, &pos, &(m_state[i]) );
+			SetMovingObjectStates( cvedId, -1, uniqueId, posori, &pos, &(m_state[i]) );
 			
 		}
 	}
+	vector<CDiguyRotationOverride> overrides;
+	CHcsmCollection::GetDiGuyJointOverrides(overrides);
+	CHcsmCollection::clearDiGuyJointOverides();
+	map<int, COverrideDiGuyJointAngles> overOut;
+	for (auto x : overrides) {
+		int currentIndex = overOut[x.HCSMid]._numOverrides;
+		overOut[x.HCSMid]._id = x.HCSMid;
+		strncpy((overOut[x.HCSMid])._angles[currentIndex].name, x.joint.c_str(),32);
+		auto& anglesDeg = overOut[x.HCSMid]._angles[currentIndex].angles;
+		anglesDeg[0] = x.angles.RollA();
+		anglesDeg[1] = x.angles.YawA();
+		anglesDeg[2] = x.angles.PitchA();
+		overOut[x.HCSMid]._numOverrides++;
+	}
+	for (auto x : overOut) {
+		m_pRender->OverRideJointAngles(x.second);
+	}
+	
 	return true;
 }
  //////////////////////////////////////////////////////////////////////////////
@@ -616,6 +690,24 @@ void CGraphicsStateAdapter::DoDiGuyUpdate(
 			CPoint3D* eyepos, //= NULL,
 			cvTObjState* state //= NULL	
 			){
+	//state->trajFollowerState.classType
+	if (state->trajFollowerState.classType == eCV_DIGUY_GUIDE_CONTROL ||
+		state->trajFollowerState.classType == eCV_DIGUY_DIR_CONTROL) {
+		int command;
+		if (state->trajFollowerState.classType == eCV_DIGUY_GUIDE_CONTROL) {
+			command = 6;
+		}
+		else {
+			command = 8;
+		}
+		float data[]{ posori[0],posori[1],posori[2],posori[3],0,0 };
+		m_pRender->UpdateDiGuyObject(cvedId,
+			0,
+			command,
+			data,
+			nullptr
+		);
+	}
 #ifdef USE_IGCOMM
 	//process what ever here
 	string testOutput = "Hello DiGuy";
@@ -758,15 +850,15 @@ CGraphicsStateAdapter::SetMovingObjectStates(
 
 				OSGDOFState[1].DOFId            = 1;
 				OSGDOFState[1].DOFEnabledFields = DOF_H | DOF_P;
-				OSGDOFState[1].pitch            = state->vehicleState.vehState.tireRot[1]*M_PI/180.0f;
-				OSGDOFState[1].yaw              = -steerAngle*M_PI/180.0f;
+				OSGDOFState[1].pitch            = state->vehicleState.vehState.tireRot[1]*M_PIf/180.0f;
+				OSGDOFState[1].yaw              = (float)(-steerAngle*M_PI/180.0);
 				OSGDOFState[1].roll             = 0;
 				OSGDOFState[1].x                = OSGDOFState[1].y = OSGDOFState[1].z = 0;
 
 
 				OSGDOFState[2].DOFId            = 2;
 				OSGDOFState[2].DOFEnabledFields = DOF_P;
-				OSGDOFState[2].pitch            = state->vehicleState.vehState.tireRot[2]*M_PI/180.0;
+				OSGDOFState[2].pitch            = state->vehicleState.vehState.tireRot[2]*M_PIf/180.0f;
 				OSGDOFState[2].yaw              = OSGDOFState[2].roll = 0;
 				OSGDOFState[2].x                = OSGDOFState[2].y = OSGDOFState[2].z = 0;
 			}
@@ -882,7 +974,7 @@ CGraphicsStateAdapter::SetMovingObjectStates(
 			OSGDOFCount = 3;
 			OSGDOFState[0].DOFId            = 0;
 			OSGDOFState[0].DOFEnabledFields = DOF_H | DOF_P;
-			OSGDOFState[0].pitch            = state->vehicleState.vehState.tireRot[0]*M_PI/180.0;
+			OSGDOFState[0].pitch            = state->vehicleState.vehState.tireRot[0]*M_PIf/180.0f;
 			OSGDOFState[0].yaw              = (float)(-steerAngle*3*M_PI/180.0); // doesn't seem to be enough, triple up
 			OSGDOFState[0].roll             = 0;
 			OSGDOFState[0].x                = OSGDOFState[0].y = OSGDOFState[0].z = 0;
@@ -1011,6 +1103,85 @@ CGraphicsStateAdapter::SetMovingObjectStates(
 	}
 }
 bool 
+CGraphicsStateAdapter::AddPreCreates(){
+	CCved& cved = m_pScen->GetCved();
+    //m_pScen->FindPreCreateObjects
+///
+	/// load pre-creation models for scenario objects
+	///
+	const map<string, set<int> > *pSceneObjMap;
+	map<string, set<int> >::const_iterator mitr;
+	m_pScen->GetSolColorNames( pSceneObjMap );
+
+	int precCount = 0;
+	for ( mitr = pSceneObjMap->begin(); mitr != pSceneObjMap->end(); ++mitr )
+	{
+		const CSolObj* cpSolObj = m_pScen->GetCved().GetSol().GetObj( mitr->first );
+		//
+		// Get the CIGI id.
+		//
+		int cigiId, modelType;
+
+		if( cpSolObj )
+		{
+			cigiId = cpSolObj->GetVisModelCigiId();
+			bool invalidCigiId = cigiId < 0;
+			if( invalidCigiId )
+			{
+				cout<<"Error: Pre-creation: Sol obj"<<mitr->first.c_str()<<" has no valid cigi id";
+				continue;
+			}
+		}
+		else
+		{
+			cout<<"Error: Sol obj"<<mitr->first.c_str()<<" is invalid";
+			continue;
+		}
+
+		//
+		// Get the CIGI color.
+		//
+		const CSolObjVehicle* cpSolVehObj = dynamic_cast<const CSolObjVehicle*>( cpSolObj );
+		if ( cpSolVehObj )
+		{
+			set<int>::const_iterator sitr;
+			for ( sitr=mitr->second.begin(); sitr!=mitr->second.end(); ++sitr )
+			{
+				int objColorIndex = *sitr;
+				int cigiColor = cpSolVehObj->GetColor( objColorIndex ).cigi;
+				modelType = cigiId + cigiColor;
+				// load the model
+					//g_pOsgRend->CreateObject(modelType,40000 + precCount,0,0,0,0,0,0);
+					//g_pOsgRend->DeleteObject(40000 + precCount);
+				m_pRender->PreloadModel(modelType);
+
+				++precCount;	
+			}
+				
+		}
+		else
+		{
+			// not a vehicle, ignore color indices
+			const CSolObjDiGuy* cpDiGuyObj = dynamic_cast<const CSolObjDiGuy*>( cpSolObj );
+			if (cpDiGuyObj)
+				continue; //DiGuy Objects are precreated at start of the IG.
+			modelType = cigiId;
+			if (m_pRender){
+				//g_pOsgRend->CreateObject(modelType,40000 + precCount,0,0,0,0,0,0);
+				//g_pOsgRend->DeleteObject(40000 + precCount);
+				//g_pOsgRend->PreloadModel(modelType);
+			}
+			++precCount;
+		}
+	}
+    CScenarioControl::TVirtModelList models;
+    m_pScen->GetVirtObjectsModels(models);
+    for (auto itr = models.begin(); itr != models.end(); ++itr){
+        m_pRender->CreateVirtualObjectModel(**itr);
+    }
+    return true;
+}
+bool 
 CGraphicsStateAdapter::InitStaticObjects(){
 
 	vector<int>				objs;
@@ -1072,7 +1243,8 @@ CGraphicsStateAdapter::InitStaticObjects(){
 								modelType, 
 								uniqueId,
 								pos.m_x, pos.m_y, pos.m_z, 
-								initRot[0], initRot[1], initRot[2]
+								initRot[0], initRot[1], initRot[2],0,
+                                cSTATIONARY_OBJECT
 								);
 					}
 
@@ -1103,46 +1275,32 @@ CGraphicsStateAdapter::InitStaticObjects(){
 	}
 	return true;
 }
-
+/////////////////////////////////////////////////////////
+///\brief 
+///   copy headlight setting from scenario to graphics
+////////////////////////////////////////////////////////
 bool
 CGraphicsStateAdapter::UpdateHeadlights(){
 
-	if ( m_headLightsOn != m_pScen->GetScenarioHeadlightSetting() > 0){
-		m_headLightsOn =  m_pScen->GetScenarioHeadlightSetting()>0;
-		double Azimuth;
-		double Elevation;
-		double BeamWidth;
-		double BeamHeight;
-		double ConstCoeff;
-		double LinearCoeff;
-		double QuadCoeff;
-		double HeightFade;
-		double Intensity;
-		double CutOffDist;
-		double LampSeparation;
-		double LampForwardOffset;
-		m_pScen->GetOwnshipLights(
-				Azimuth,
-				Elevation,
-				BeamWidth,
-				BeamHeight,
-				ConstCoeff,
-				LinearCoeff,
-				QuadCoeff,
-				HeightFade,
-				Intensity,
-				CutOffDist,
-				LampSeparation,
-				LampForwardOffset
-			);
-		m_pRender->CreateOwnshipHeadlights( 
-			        m_headLightsOn, 
-					Azimuth, Elevation, BeamWidth, BeamHeight,
-					ConstCoeff, LinearCoeff, QuadCoeff, HeightFade, Intensity, CutOffDist,
-					LampSeparation,LampForwardOffset
-					);
-		
-	}
+    CHcsmCollection::THeadlightSetting setting;
+
+	m_pScen->GetOwnshipLights(setting);
+	m_pRender->CreateOwnshipHeadlights( 
+        setting.On, 
+		setting.Azimuth, 
+        setting.Elevation, 
+        setting.BeamWidth, 
+        setting.BeamHeight,
+        setting.ConstCoeff, 
+        setting.LinearCoeff, 
+        setting.QuadCoeff, 
+        setting.HeightFade, 
+        setting.Intensity, 
+        setting.CutOffDist,
+        setting.LampSeparation,
+        setting.LampForwardOffset
+				);
+	
 	return true;
 
 }
@@ -1339,7 +1497,128 @@ CGraphicsStateAdapter::SetLRIObjectStates(
 
 	// set the states
 }
+void ConvEnvArea(const CEnvArea& area, CEnviroCond &env){
+	float windSpeed = -1.0f, windDirection[2] = {1, 0};
+    float fogDist = -1;
+	float visibility = -10000.0f;
+	vector<cvTEnviroInfo> conditions;
+    area.GetCndtns( conditions );
+    for( auto xx = conditions.begin(); xx != conditions.end(); xx++ )
+    {
+    	if ( xx->type == eWIND ) // and the flag for overwriting global condition is set 
+    	{
+    		windSpeed        = (float) xx->info.Wind.vel;
+    		windDirection[0] = (float) xx->info.Wind.dir_i;
+    		windDirection[1] = (float) xx->info.Wind.dir_j;
+    	}
+    	else if ( xx->type == eVISIBILITY )
+    	{
+               env.m_PrecipType = CEnviroCond::ESand;
+               env.m_FogIntensity = 
+    			(float) (xx->info.Visibility.dist );
+    	}
+        else if (xx->type == eFOG){ //densest fog wins
+            env.m_PrecipType = CEnviroCond::EFog;
+            if ( (xx->info.Fog.dist < env.m_FogDist) || env.m_FogDist == 0){
+                env.m_EnableFog = true;
+                env.m_FogDist = (float)xx->info.Fog.dist;
+            }
+        }
+    }
+	if ( windSpeed >=0 ) // found local wind
+	{
+		env.m_WindVel = windSpeed * 1609 / 3600;
+		env.m_WindDir = float(-atan2( windDirection[1], windDirection[0] ) * cPI * 180);
+	}
+	if ( visibility >=0 ) // found local visibility
+	{
+        //env.m_FogDist = visibility;
+    }
+}
+bool
+CGraphicsStateAdapter::SetEnv(){
+    CEnviroCond env;
+    CCved& cved = m_pScen->GetCved();
+    int year, month, day;
+	m_pScen->GetDateAndTime( year, month, day, env.m_Hours, env.m_Mins );
+	env.m_Date = year + month*1000000 + day*10000;
+
+	bool sunEntityEnabled, sunlightEnabled, moonEntityEnabled, moonlightEnabled;
+	float sunlightIntensity, moonlightIntensity;
+
+	m_pScen->GetSkyModelValues( sunEntityEnabled, sunlightEnabled, 
+		moonEntityEnabled, moonlightEnabled, sunlightIntensity, moonlightIntensity );
+	env.m_EnableSunLight = moonlightEnabled;
+	env.m_AmbientLightInt = moonlightIntensity;
+
+	// set up environmental conditions 
+	bool enviroChanged = false;
+
+	// get local environment conditions
+	vector<CEnvArea> envArea;
+    CPoint3D pos;
+    cved.GetOwnVehiclePos(pos);
+    auto global = cved.GetGlobalEnvArea();
+	ConvEnvArea(global,env);
+	cved.GetEnvArea( pos, envArea );
+	if( !envArea.empty() ) 
+	{
+		//
+		// Look for wind effects.
+		//
+		vector<cvTEnviroInfo>::const_iterator xx;
+		vector<CEnvArea>::const_iterator yy;
+		for( yy = envArea.begin(); yy < envArea.end(); yy++ )
+		{
+			if ( yy->IsValid() )
+			{
+				ConvEnvArea(*yy,env);
+			}
+		}
+	}
+	m_pRender->SetEnvironment(env);
+    return true;
+}
+
+bool CGraphicsStateAdapter::InitVirtualObjects(){
+    CScenarioControl::TVirtModelList models;
+    m_pScen->GetVirtObjectsModels(models);
+    for (auto itr = models.begin(); itr != models.end(); ++itr){
+        m_pRender->CreateVirtualObjectModel(**itr);
+    }
+    return true;
+}
 /*$Log: GraphicsStateAdapter.cpp,v $
+/*Revision 1.21  2018/09/12 20:41:01  IOWA\dheitbri
+/*added DiGuy update
+/*
+/*Revision 1.20  2018/09/07 14:32:43  IOWA\dheitbri
+/*added diGuy actions for overriding joint angles
+/*
+/*Revision 1.19  2018/03/27 14:48:55  IOWA\dheitbri
+/*took care of warnings
+/*
+/*Revision 1.18  2017/10/12 17:02:27  IOWA\dheitbri
+/*updated headlight settings, added a constructor
+/*
+/*Revision 1.17  2017/08/16 20:20:25  IOWA\dheitbri
+/*added new set env condition action, moved headlights to HCSMCollection
+/*
+/*Revision 1.16  2017/06/01 20:07:00  IOWA\dheitbri
+/**** empty log message ***
+/*
+/*Revision 1.15  2017/05/03 16:58:48  IOWA\dheitbri
+/*added new actions, updated headlights
+/*
+/*Revision 1.14  2017/01/30 21:08:43  IOWA\dheitbri
+/*fixed some env issues
+/*
+/*Revision 1.13  2017/01/24 22:52:33  IOWA\dheitbri
+/*fixed issue with bad compare
+/*
+/*Revision 1.12  2016/11/15 22:59:54  IOWA\dheitbri
+/*updated the fog settings
+/*
 /*Revision 1.11  2016/10/28 20:52:46  IOWA\dheitbri
 /*fixed some warnings
 /*

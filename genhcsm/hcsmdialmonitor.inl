@@ -168,6 +168,17 @@ GetMonitorByName( const string& monitorName, CRoadPos* )
 }
 
 inline virtual bool
+GetMonitorByName( const string& monitorName, float* )
+{
+
+    cout << MyName()
+         << "::GetMonitorByName has no monitor named "
+         << monitorName << endl;
+    return false;
+
+}
+
+inline virtual bool
 GetMonitorByName( const string& monitorName, CCrdr* )
 {
 

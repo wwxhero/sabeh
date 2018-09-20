@@ -37,7 +37,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{554A3ACB-8FBE-45A0-B14C-A8E7E22E2D80}</ProjectGuid>
     <RootNamespace>hcsm</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_MiniSim|Win32'" Label="Configuration">
@@ -69,17 +69,19 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>NotSet</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>NotSet</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -178,7 +180,7 @@ call ..\mcopy hcsm\usersrc\staticobjmanagerutil.h ..\include
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\nads-boost;hcsm;genhcsm;hcsm\usersrc;..\include;..\ode\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;EDO_CONTROLLER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;ADO_CONTROLLER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -448,6 +450,7 @@ call ..\mcopy hcsm\usersrc\staticobjmanagerutil.h ..\include
     <ClInclude Include="hcsm\dial.h" />
     <ClInclude Include="hcsm\exceptionsuicide.h" />
     <ClInclude Include="hcsm\GraphicsStateAdapter.h" />
+    <ClInclude Include="hcsm\hcsmUDPclient.h" />
     <ClInclude Include="hcsm\usersrc\CreateRandomGen.h" />
     <ClInclude Include="hcsm\usersrc\expevalAdo.h" />
     <ClInclude Include="hcsm\usersrc\expevalTTA.h" />
@@ -470,6 +473,7 @@ call ..\mcopy hcsm\usersrc\staticobjmanagerutil.h ..\include
     <ClInclude Include="hcsm\vehfailclient.h" />
     <ClInclude Include="hcsm\usersrc\visualDisplayTextAction.h" />
     <ClInclude Include="hcsm\debugitem.h" />
+    <ClInclude Include="hcsm\workerthread.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="hcsm\actvlog.cxx">
@@ -594,6 +598,7 @@ call ..\mcopy hcsm\usersrc\staticobjmanagerutil.h ..\include
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <ClCompile Include="hcsm\GraphicsStateAdapter.cpp" />
+    <ClCompile Include="hcsm\hcsmudpclient.cxx" />
     <ClCompile Include="hcsm\usersrc\CreateRandomGen.cpp" />
     <ClCompile Include="hcsm\usersrc\expevalAdo.cxx" />
     <ClCompile Include="hcsm\usersrc\expevalTTA.cxx" />
@@ -1019,6 +1024,7 @@ call ..\mcopy hcsm\usersrc\staticobjmanagerutil.h ..\include
     </ClCompile>
     <ClCompile Include="hcsm\ScenarioControl.cxx" />
     <ClCompile Include="hcsm\sockcode.cxx" />
+    <ClCompile Include="hcsm\workerthread.cxx" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="hcsmgen.vcxproj">

@@ -201,7 +201,7 @@ void CHcsmSequential::Execute()
 		//
 		//enum EHcsmState { eBORN, eACTIVE, eINACTIVE, eDYING };
 		const TCHAR* infoState[] = { "eBORN", "eACTIVE", "eINACTIVE", "eDYING" };
-		TRACE(TEXT("HcsmSequential:%d %s\n"), this, infoState[m_state]);
+		//TRACE(TEXT("HcsmSequential:%d %s\n"), this, infoState[m_state]);
 
 		if( m_state == eACTIVE )
 		{

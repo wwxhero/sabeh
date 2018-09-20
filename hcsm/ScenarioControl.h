@@ -4,7 +4,7 @@
 // Simulation Center, The University of Iowa and the University of Iowa.
 // All rights reserved.
 //
-// Version:		$Id: ScenarioControl.h,v 1.43 2015/08/28 21:21:47 IOWA\dheitbri Exp $
+// Version:		$Id: ScenarioControl.h,v 1.46 2018/09/07 14:34:42 IOWA\dheitbri Exp $
 // Author(s):   Yiannis Papelis
 // Date:        December, 2003
 //
@@ -30,7 +30,7 @@
 #define COLLISION_WITH_TERRAIN
 
 using namespace std;
-
+class CVirtualObjectModel;
 const int cTRAF_LIGHT_MAX_SIZE = 40;
 const int cMAX_COLLISION_LIST_SIZE = 10;
 
@@ -46,7 +46,8 @@ class CScenarioControl
 public:
 	CScenarioControl();
 	~CScenarioControl();
-
+    typedef std::vector<std::shared_ptr<CVirtualObjectModel>> TVirtModelList;  //in the future this will be a unique ptr, but VS2010 does not play well with them
+    typedef std::vector<CVirtualObjectParseBlock> TVirtObjSet;
 	void SetDefaults( float behavDelta, int dynaMult, int verbose );
 	const char* GetLastErrorString( void ) const;
 
@@ -82,18 +83,7 @@ public:
 	bool SetCabType( const char* cabSOLName, const char* trailerSOLName = NULL );
 
 	bool GetOwnshipLights(
-				double& azimuth,
-				double& elevation,
-				double& beamWidth,
-				double& beamHeight,
-				double& constCoeff,
-				double& linearCoeff,
-				double& quadCoeff,
-				double& heightFade,
-				double& intensity,
-				double& cutOffDist,
-				double& lampSeparation,
-				double& lampForwardOffset
+        CHcsmCollection::THeadlightSetting &setting
 				);
 
 	void GetDateAndTime(
@@ -245,12 +235,14 @@ public:
 	void ComputeTrafLightData( const CPoint3D& cOwnVehCartPos );
 
 
-	void GetVirtObjectsBlocks(const std::vector<CSnoBlock>* &pBlocks);
+    void GetVirtObjectsModels(TVirtModelList&); 
 	void GetSolColorNames(const std::map<string, set<int> >* &pSets) ;
 	void EnableRehearsalControlOfExternalDriver(bool);
 	void SetRehearsalSpeedOfExternalDriver(float TargetVelocity,string TypeOfVelocity,bool isStopping);
 	void SetRehearsalChangeLaneRightExternalDriver();
 	void SetRehearsalChangeLaneLeftExternalDriver();
+	void SetRehearsalExternalDriverButton(const std::string &str);
+    TVirtObjSet GetVirtObjModels();
 	CCved*            m_pCved;
 	CHcsmCollection*  m_pRootColl;
     const string& GetLriName();
@@ -264,7 +256,7 @@ private:
 	vector<int>  m_objFromLastTime;	// helps keep track of creations/deletions
 	vector<int>  m_virtualObjFromLastTime;	// helps keep track of creations/deletions
 
-	vector<CSnoBlock> m_virtualObjects; //<Copy of all Sno Blocks of Virt Objects
+	TVirtObjSet m_virtualObjects; //<Copy of all Sno Blocks of Virt Objects
 	map<string, set<int> > m_modelOptionPairs; //<We only need to precreate 1 object 1 color combo
 
 	float   m_behavDeltaT;			// behaviors execution period
@@ -290,22 +282,6 @@ private:
 	string m_cabSolObjName;
 	string m_cabTrailerSolObjName;
 	bool m_showCab;
-
-//	CVED::CPath m_ownshipPath;
-
-	bool m_ownshipHeadlightsOn;
-	double m_ownshipHeadlightsAzimuth;
-	double m_ownshipHeadlightsElevation;
-	double m_ownshipHeadlightsBeamWidth;
-	double m_ownshipHeadlightsBeamHeight;
-	double m_ownshipHeadlightsConstCoeff;
-	double m_ownshipHeadlightsLinearCoeff;
-	double m_ownshipHeadlightsQuadCoeff;
-	double m_ownshipHeadlightsHeightFade;
-	double m_ownshipHeadlightsIntensity;
-	double m_ownshipHeadlightsCutOffDist;
-	double m_ownshipHeadlightsLampSeparation;
-	double m_ownshipHeadlightsLampForwardOffset;
 
 	short m_year;
 	short m_month;

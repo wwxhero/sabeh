@@ -615,7 +615,7 @@ sAddSolObjsToVector()
 // time taken exactly at the right spot in the array.
 //
 //
-int round( double num )
+int round5( double num )
 {
 	// 40 -- 41 -- 45
 	int val = (int)(num > 0.0 ? num + 0.5 : num - 0.5);
@@ -715,15 +715,15 @@ InputIntoArrays( string& dataFileName )
 
 		// Inserting values from the text file into the array
 		//cout << velocity << " - " << round(velocity) - 1 << " "<< urgency << " - " << int(urg - 1) << endl;
-		if( round(velocity) == 0 ) // 1.3, 1.7mph etc.
+		if(round5(velocity) == 0 ) // 1.3, 1.7mph etc.
 		{
 			LongDist[solIdIndex][0][int(urg - 1)] = longDist;
 			Time[solIdIndex][0][int(urg - 1)] = time;	
 		}
 		else
 		{
-			LongDist[solIdIndex][(round(velocity) - 1 )][int(urg - 1)] = longDist;
-			Time[solIdIndex][(round(velocity) - 1)][int(urg - 1)] = time;	
+			LongDist[solIdIndex][(round5(velocity) - 1 )][int(urg - 1)] = longDist;
+			Time[solIdIndex][(round5(velocity) - 1)][int(urg - 1)] = time;
 		}
 		if (ifsInputFile.eof()) {
 			break;

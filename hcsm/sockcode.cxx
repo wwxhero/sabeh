@@ -4,7 +4,7 @@
 // Simulation Center, the University of Iowa and The University
 // of Iowa. All rights reserved.
 //
-// Version:      $Id: sockcode.cxx,v 1.36 2016/10/28 20:47:57 IOWA\dheitbri Exp $
+// Version:      $Id: sockcode.cxx,v 1.42 2018/09/07 14:35:12 IOWA\dheitbri Exp $
 // Author:       Yiannis Papelis
 // Date:         August, 1999
 //
@@ -42,9 +42,9 @@ typedef bool BOOL;
 typedef bool BOOL;
 #endif
 
-#undef _HCSM_DEBUG_SOCK_
+#define _HCSM_DEBUG_SOCK_
 //#define _HCSM_DEBUG_SOCK_
-
+static size_t cUdpMsgHeaderSize  = sizeof(TUDPMsgHeader);
 ////////////////////////////////////////////////////////////////////////////
 //
 // Description: connect to a socket using the specified port
@@ -203,7 +203,7 @@ CreateNonBlockingSocket(int port)
 	// activated, we simply monitor for messages and implement what
 	// the messages say.
 	//
-	if ( listen(listenSock, 2) < 0 ) {
+	if ( listen(listenSock, 200) < 0 ) {
 #ifdef _HCSM_DEBUG_SOCK_
 		fprintf(stderr, "<-Exit with -1, listen() call failed\n");
 #endif
@@ -251,37 +251,43 @@ CreateNonBlockingSocket(int port)
 
 
 #ifdef _HCSM_DEBUG_SOCK_
-	fprintf(stderr, "<-Exit with %d (OK)\n", listenSock);
+	fprintf(stderr, "<-Exit with %d (OK)\n", (int)listenSock);
 #endif
 	return listenSock;
 }
 
 
 SOCKET
-PollSocketForConnection(int sock)
+PollSocketForConnection(SOCKET sock)
 {
 	SOCKET       cmdSock;
 	int          cliLen  = sizeof(sockaddr_in);
 	sockaddr_in  clientAddr;
 
-	cmdSock = accept(sock, (sockaddr *)&clientAddr, &cliLen);
-	if ( cmdSock == INVALID_SOCKET ) {
-#ifdef _WIN32
-		if ( WSAGetLastError() == WSAEWOULDBLOCK ) {
-#else
-		if ( errno == EWOULDBLOCK ) {
-#endif
-			return 0;
-		}
-		else {
-#ifdef _WIN32
-#else
-			fprintf(stderr, "PollSocket: accept failed: %d\n", errno);
-#endif
-			return -1;
-		}
-	}
-
+    FD_SET readfds;
+	FD_ZERO(&readfds);
+	FD_SET(sock, &readfds); //Add listenSocket to readfds
+    //select(0, &readfds, NULL, NULL, NULL);
+	if (1 /* FD_ISSET(sock, &readfds)*/) //if listenSocket was in readfds
+	{
+    	cmdSock = accept(sock, (sockaddr *)&clientAddr, &cliLen);
+    	if ( cmdSock == INVALID_SOCKET ) {
+    #ifdef _WIN32
+    		if ( WSAGetLastError() == WSAEWOULDBLOCK ) {
+    #else
+    		if ( errno == EWOULDBLOCK ) {
+    #endif
+    			return 0;
+    		}
+    		else {
+    #ifdef _WIN32
+    #else
+    			fprintf(stderr, "PollSocket: accept failed: %d\n", errno);
+    #endif
+    			return -1;
+    		}
+	    }
+    }
 	return cmdSock;
 }
 
@@ -369,7 +375,7 @@ ReadHeader(SOCKET sock, TMsgHeader &head)
 	int bytesRead ;
 
 #ifdef _HCSM_DEBUG_SOCK_
-	fprintf(stderr, "->Enter ReadHeader(%d,)\n", sock);
+	fprintf(stderr, "->Enter ReadHeader(%d,)\n", (int)sock);
 #endif
 
 	bytesRead = recv(sock, (char *)&head, sizeof(head), 0);
@@ -392,7 +398,7 @@ ReadHeader(SOCKET sock, TMsgHeader &head)
 	if ( bytesRead != sizeof(head) ) {
 #ifdef _HCSM_DEBUG_SOCK_
 		fprintf(stderr,"<-Exit with -1, expected %d, got %d\n",
-					sizeof(head), bytesRead);
+			(int)sizeof(head), bytesRead);
 #endif
 		return -1;
 	}
@@ -416,6 +422,44 @@ ReadHeader(SOCKET sock, TMsgHeader &head)
 					head.m_OpCode, head.m_MsgLen);
 #endif
 	return bytesRead;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Description: read the header of a message from a socket
+//
+// Remarks:
+// Read a message header from the specified socket.  Also, make
+// sure the header is a valid HCSM communication message header,
+// convert the data to adjust for big/little endian.
+//
+// Returns:
+// A negative number in case of an error or the number of
+// bytes read.  If the socket is marked as non-blocking
+// and the read fails because there is just not data, the function
+// returns 0
+//
+int
+ReadMessage(std::vector<char>& buff, TMessage &msgs, TUDPMsgHeader &udpheader)
+{
+    auto &header = msgs.header;
+    int totalHeaderSize = (int)cUdpMsgHeaderSize + (int)sizeof(TMsgHeader);
+    if (buff.size() < cUdpMsgHeaderSize + sizeof(TMsgHeader))
+        return -1;
+    size_t bufferHeaderSize = sizeof(TMsgHeader);
+    TUDPMsgHeader* pHeader = (TUDPMsgHeader*)(buff.data());
+    udpheader.msgSize = pHeader->msgSize;
+    udpheader.senderAddr = pHeader->senderAddr;
+    auto recvbuffer = &((buff.data())[cUdpMsgHeaderSize]);
+    memcpy(&header,recvbuffer,sizeof(TMsgHeader));
+    int length = header.m_MsgLen;
+    if (length + totalHeaderSize > buff.size())
+        return -1;
+
+    recvbuffer = &((buff.data())[totalHeaderSize]);
+    memset(&msgs.data,0,sizeof(msgs.data));
+    memcpy(&msgs.data,recvbuffer,length);
+	return length;
 }
 
 
@@ -505,7 +549,7 @@ SendMessage(SOCKET sock, int cmd, const void *pBuf, int size)
 
 #ifdef _HCSM_DEBUG_SOCK_
 	fprintf(stderr, "->Enter SendMessage(sock=%d, cmd=%d, size=%d)\n",
-				sock, cmd, size);
+		(int)sock, (int)cmd, (int)size);
 #endif
 
 	length = size + sizeof(TMsgHeader);
@@ -561,7 +605,7 @@ RecvMessage(SOCKET sock, TMessage &msg )
 {
 
 #ifdef _HCSM_DEBUG_SOCK_
-	fprintf(stderr, "->Enter RecvMessage(sock=%d,): ", sock);
+	fprintf(stderr, "->Enter RecvMessage(sock=%d,): ", (int)sock);
 #endif
 	int code = ReadHeader(sock, msg.header);
 
@@ -616,7 +660,7 @@ CloseSocket(SOCKET sock)
 #endif
 	else {
 #ifdef _WIN32
-		printf("Close(%d) failed:%d\n", sock, WSAGetLastError());
+		printf("Close(%d) failed:%d\n", (int)sock, WSAGetLastError());
 #else
 		printf("Close(%d) failed:%d\n", sock, errno);
 #endif
@@ -702,5 +746,114 @@ CvedDataToCommData( const cvTObjState& cvState, TCommObjState& coState, cvEObjTy
 	}
 }
 
+void
+CvedDataToCommDataLE( const cvTObjState& cvState, TCommObjState& coState, cvEObjType objType, CCved* pCved, int id )
+{
+	coState.position.x=cvState.anyState.position.x    ;
+	coState.position.y=cvState.anyState.position.y    ;
+	coState.position.z=cvState.anyState.position.z    ;
+                                    ;
+	coState.tangent.i=cvState.anyState.tangent.i     ;
+	coState.tangent.j=cvState.anyState.tangent.j     ;
+	coState.tangent.k=cvState.anyState.tangent.k     ;
+                                    ;
+	coState.lateral.i=cvState.anyState.lateral.i     ;
+	coState.lateral.j=cvState.anyState.lateral.j     ;
+	coState.lateral.k=cvState.anyState.lateral.k     ;
+                                    ;
+	coState.boundBox[0].x=cvState.anyState.boundBox[0].x ;
+	coState.boundBox[0].y=cvState.anyState.boundBox[0].y ;
+	coState.boundBox[0].z=cvState.anyState.boundBox[0].z ;
+                                    ;
+	coState.boundBox[1].x=cvState.anyState.boundBox[1].x ;
+	coState.boundBox[1].y=cvState.anyState.boundBox[1].y ;
+	coState.boundBox[1].z=cvState.anyState.boundBox[1].z ;
 
+	coState.vel = cvState.anyState.vel;
+
+	// first copy the visualState flag, as most objects will use it
+	coState.specific.visualState =  pCved->GetVehicleVisualState( id );
+	switch ( objType ){
+	case eCV_TRAFFIC_LIGHT:
+		{
+//		cerr << "TLstate is " << pCved->GetTrafficLightState(id) << endl;
+		coState.specific.state = (eCVTrafficLightState)pCved->GetTrafficLightState(id);
+//		cerr << "htonl(TLstate) is " << coState.specific.state << endl;
+		}
+		break;
+
+	default:
+//		cerr << "Default: Type is " << objType << endl;
+		break;
+	}
+}
+
+
+
+CUdpThread::CUdpThread(unsigned short port):CAccumulatorBufferThread(),m_port(port),m_socket(INVALID_SOCKET){
+   _template = TBuffRef(new CByteBuffer(0));//
+   _template->AsByteBuffer()->Get().resize(cUdpMsgHeaderSize+1500);
+}
+void CUdpThread::BufferLoop(TBuffRef ref){
+    auto& buffer = ref->AsByteBuffer()->Get();
+    size_t bufferSize = cUdpMsgHeaderSize+1500;
+    
+    buffer.resize(bufferSize,0);
+	TUDPMsgHeader* pHeader = (TUDPMsgHeader*)(buffer.data());
+    auto recvbuffer = &((buffer.data())[cUdpMsgHeaderSize]);
+    int dwSenderSize = sizeof(pHeader->senderAddr);
+    int recvSize = 
+        recvfrom(m_socket,recvbuffer, 
+          (int)1500, 0,
+          (SOCKADDR *)&(pHeader->senderAddr), &(dwSenderSize));
+    
+}
+bool CUdpThread::Start(){
+    SOCKADDR_IN myAddr;
+    myAddr.sin_family = AF_INET;
+    myAddr.sin_port = htons((short)m_port);
+    myAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    
+    m_socket = socket(AF_INET, SOCK_DGRAM, 0);
+    if (m_socket == INVALID_SOCKET ){
+	     return false;
+    }
+    char val = 1;
+    if (0 != ::setsockopt(m_socket,SOL_SOCKET,SO_REUSEADDR,&val,sizeof(val))){
+	     string desc;
+    }
+	int n = 1024 * 1024;
+	if (setsockopt(m_socket, SOL_SOCKET, SO_RCVBUF, (const char*)&n, sizeof(n)) == -1) {
+		// deal with failure, or ignore if you can live with the default size
+	}
+
+    if (::bind(m_socket, (SOCKADDR *)&myAddr, sizeof(myAddr)) <0){
+       return false;
+    }
+    return CAccumulatorBufferThread::Start();
+}
+bool  CUdpThread::Stop(){
+
+    if (m_socket)
+        CloseSocket(m_socket);
+    CAccumulatorBufferThread::Stop();
+    m_socket = 0;
+    return true;
+}
+
+
+CUdpSender::CUdpSender(){
+    m_socket = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);
+}
+CUdpSender::~CUdpSender(){
+    CloseSocket(m_socket);
+}
+void CUdpSender::Send(const TUDPMsgHeader dst, const TMessage &msgs){
+    int error =0;
+    int sizeOut = msgs.header.m_MsgLen + sizeof(msgs.header);
+    int sizeSent = sendto(m_socket, (char*)&msgs, (int)sizeOut,0,(sockaddr*)&dst.senderAddr, (int)sizeof(dst.senderAddr));
+    if (sizeSent< 0){
+        error=::WSAGetLastError();
+    }
+}
 

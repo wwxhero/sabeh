@@ -152,6 +152,28 @@ private:
 };
 
 //////////////////////////////////////////////////////////////
+// CMonitorfloat
+//////////////////////////////////////////////////////////////
+
+class CMonitorfloat : public CMonitor
+{
+public:
+    CMonitorfloat( CHcsmCollection*, string );
+    CMonitorfloat( const CMonitorfloat& );
+    CMonitorfloat& operator=( const CMonitorfloat& );
+    virtual ~CMonitorfloat(); 
+    float GetValue();
+    string GetValueStr();
+    void SetValue( float );
+    void SetValueStr(const string &);
+
+private:
+    float m_prevValue;
+    float m_valueA;
+    float m_valueB;
+};
+
+//////////////////////////////////////////////////////////////
 // CMonitorCCrdr
 //////////////////////////////////////////////////////////////
 

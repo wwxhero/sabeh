@@ -41,6 +41,8 @@ public:
     void SetDialSpeedOverRideNoValue();
     void SetDialDiGuyAction( string );
     void SetDialDiGuyActionNoValue();
+    void SetDialDiGuyJointOverride( string );
+    void SetDialDiGuyJointOverrideNoValue();
     CRoadPos GetMonitorRoadPos();
     virtual bool SetButtonByName( const string& );
     bool SetDialByName( const string&, const int& );
@@ -52,6 +54,7 @@ public:
     bool IsDialActiveByNameStr( const string& );
     bool ResetDialByName( const string& );
     bool GetMonitorByName( const string&, CRoadPos* );
+    bool GetMonitorByName( const string&, float* );
     bool GetMonitorByName( const string&, CCrdr* );
     bool GetMonitorByName( const string&, int* );
     bool GetMonitorByName( const string&, bool* );
@@ -119,6 +122,8 @@ private:
     double GetDialSpeedOverRide();
     CDialstring m_dialDiGuyAction;
     string GetDialDiGuyAction();
+    CDialstring m_dialDiGuyJointOverride;
+    string GetDialDiGuyJointOverride();
     CMonitorCRoadPos m_monitorRoadPos;
     void SetMonitorRoadPos( CRoadPos );
     void SetMonitorRoadPosNoValue();
@@ -560,7 +565,17 @@ private:
     		void HandleGetInstObjsMsg(int sock, TMsgHeader &head);
     		void HandleTakeObjControlMsg(int sock, TMsgHeader &head);
     		void HandleControlObjMsg(int sock, TMsgHeader &head);
-    		void HandleReleaseObjCntrlMsg(int sock, TMsgHeader &head);
+    		void HandleReleaseObjCntrlMsg(int sock, TMsgHeader &head, const TUDPMsgHeader&);
+    		void DispatchUdpMessage(TMessage &incommingMsg, const TUDPMsgHeader&);
+    		void HandleGetDynaObjsMsg(TMessage &incommingMsg, const TUDPMsgHeader&);
+    		void HandleGetInstObjsMsg(TMessage &incommingMsg, const TUDPMsgHeader&);
+    		void HandleTakeObjControlMsg(TMessage &incommingMsg, const TUDPMsgHeader&);
+    		void HandleControlObjMsg(TMessage &incommingMsg, const TUDPMsgHeader&);
+    		void HandleReleaseObjCntrlMsg(TMessage &incommingMsg, const TUDPMsgHeader&);
+    		void HandleSetDailMsg(TMessage &incommingMsg, const TUDPMsgHeader&);
+    		void HandleResetDailMsg(TMessage &incommingMsg, const TUDPMsgHeader&);
+           TUdpThreadPtr m_udpWorker;
+           CUdpSender::TRef m_udpSender;
 };
 
 class CAdo : public CHcsmSequential
@@ -576,6 +591,8 @@ public:
     void SetDialForcedLaneOffsetNoValue();
     void SetDialForcedVelocity( string );
     void SetDialForcedVelocityNoValue();
+    void SetDialForcedSteeringAngle( string );
+    void SetDialForcedSteeringAngleNoValue();
     void SetDialImStop( double );
     void SetDialImStopNoValue();
     void SetDialInhibitLaneChange( double );
@@ -591,6 +608,7 @@ public:
     void SetDialVisualState( string );
     void SetDialVisualStateNoValue();
     CRoadPos GetMonitorRoadPos();
+    float GetMonitorDistanceToNextHldOffset();
     CCrdr GetMonitorTargCrdr();
     int GetMonitorStoppedBehindObj();
     bool GetMonitorHasStopSignTarget();
@@ -606,6 +624,7 @@ public:
     bool IsDialActiveByNameStr( const string& );
     bool ResetDialByName( const string& );
     bool GetMonitorByName( const string&, CRoadPos* );
+    bool GetMonitorByName( const string&, float* );
     bool GetMonitorByName( const string&, CCrdr* );
     bool GetMonitorByName( const string&, int* );
     bool GetMonitorByName( const string&, bool* );
@@ -651,6 +670,7 @@ private:
            void ParseAudioStateDial();
            void ParseVisualStateDial();
     		void ParseForcedLaneOffset();
+    		void ParseForcedSteeringAngle();
            bool ParseForcedVelocityDial( const double &cv, double& targVel, bool& haveAccel, double& targAccel );
            void ClearTurnSignals();
            void SetTurnSignals();
@@ -694,12 +714,22 @@ private:
     bool GetButtonTurnRight();
     CHcsmBtn m_buttonProjectAndResetLaneOffset;
     bool GetButtonProjectAndResetLaneOffset();
+    CHcsmBtn m_buttonAutoControlBrakeLightsOn;
+    bool GetButtonAutoControlBrakeLightsOn();
+    CHcsmBtn m_buttonAutoControlBrakeLightsOff;
+    bool GetButtonAutoControlBrakeLightsOff();
+    CHcsmBtn m_buttonInhibitLaneChangeOn;
+    bool GetButtonInhibitLaneChangeOn();
+    CHcsmBtn m_buttonInhibitLaneChangeOff;
+    bool GetButtonInhibitLaneChangeOff();
     CDialstring m_dialAudioState;
     string GetDialAudioState();
     CDialstring m_dialForcedLaneOffset;
     string GetDialForcedLaneOffset();
     CDialstring m_dialForcedVelocity;
     string GetDialForcedVelocity();
+    CDialstring m_dialForcedSteeringAngle;
+    string GetDialForcedSteeringAngle();
     CDialdouble m_dialImStop;
     double GetDialImStop();
     CDialdouble m_dialInhibitLaneChange;
@@ -717,6 +747,9 @@ private:
     CMonitorCRoadPos m_monitorRoadPos;
     void SetMonitorRoadPos( CRoadPos );
     void SetMonitorRoadPosNoValue();
+    CMonitorfloat m_monitorDistanceToNextHldOffset;
+    void SetMonitorDistanceToNextHldOffset( float );
+    void SetMonitorDistanceToNextHldOffsetNoValue();
     CMonitorCCrdr m_monitorTargCrdr;
     void SetMonitorTargCrdr( CCrdr );
     void SetMonitorTargCrdrNoValue();
@@ -889,6 +922,7 @@ private:
            long m_laneOffsetPrevFrame;
            double m_laneOffsetPrev;
            CVector3D m_curveOffsetPrev;
+           CVector3D m_tangentPrev;
            long m_currFollEngTime;
            double m_initFollDist;
            int  m_lastMaintainGapId;
@@ -897,6 +931,7 @@ private:
            int m_maintainGapDurationCounter;
            int m_maintainGapCounter;
            double m_prevDistToCurv;
+           double m_lastDistanceLookAhead;
            long m_refreshSpeedRandomizationFrame;
            double m_speedRandomization;
            double RandomizeVelocity( CAdoInfoPtr pI, const double, int );
@@ -1762,6 +1797,7 @@ public:
     bool IsDialActiveByNameStr( const string& );
     bool ResetDialByName( const string& );
     bool GetMonitorByName( const string&, CRoadPos* );
+    bool GetMonitorByName( const string&, float* );
     bool GetMonitorByName( const string&, CCrdr* );
     bool GetMonitorByName( const string&, int* );
     bool GetMonitorByName( const string&, bool* );

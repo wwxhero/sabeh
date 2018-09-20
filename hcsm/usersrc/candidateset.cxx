@@ -642,9 +642,11 @@ CCandidateSet::GetCandidates(const CVED::CCved& cved,
 				    int x;
 				    for ( x=0; x < iter->m_numLanes; x++ ) 
 				    {
-				    	laneMask.set( targetObjLane - 
+				    	int target = targetObjLane - 
 				    		(relObjPos.GetLane().GetDirection()==ePOS?1:-1) * 
-				    		iter->m_lanes[x] );
+				    		iter->m_lanes[x];
+                        if (target >= 0 && target<relObjPos.GetRoad().GetNumLanes())
+                            laneMask.set( target);
 
 #ifdef DEBUG_RELATIVE_CANDIDATES
 					gout << "Adding " << targetObjLane - iter->m_lanes[x] 

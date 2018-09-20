@@ -134,6 +134,24 @@ CButtonDialInfo::CButtonDialInfo()
 	{
 		TButtonDialInfo node;
 		node.m_hcsmName = "Ddo";
+		node.m_name = "DiGuyJointOverride";
+		node.m_isDial = true;
+		{
+			TDialParam node2;
+			node2.m_name = "Direction";
+			node2.m_dataType = "string";
+			node2.m_units = "direction";
+			node2.m_defValue = "right";
+			node2.m_optional = false;
+			node2.m_comment = "Direction_of_lane_change";
+			node.m_params.push_back( node2 );
+		}
+
+		m_buttonDialInfo.push_back( node );
+	}
+	{
+		TButtonDialInfo node;
+		node.m_hcsmName = "Ddo";
 		node.m_name = "TurnOnAnimation";
 		node.m_comment = "(null)";
 		node.m_isDial = false;
@@ -398,6 +416,15 @@ CButtonDialInfo::CButtonDialInfo()
 		node.m_hcsmName = "Ado";
 		node.m_name = "ForcedVelocity";
 		node.m_comment = "Forced_Velocity";
+		node.m_isDial = true;
+
+		m_buttonDialInfo.push_back( node );
+	}
+	{
+		TButtonDialInfo node;
+		node.m_hcsmName = "Ado";
+		node.m_name = "ForcedSteeringAngle";
+		node.m_comment = "Forced_Steering_Angle";
 		node.m_isDial = true;
 
 		m_buttonDialInfo.push_back( node );
@@ -726,6 +753,42 @@ CButtonDialInfo::CButtonDialInfo()
 		TButtonDialInfo node;
 		node.m_hcsmName = "Ado";
 		node.m_name = "ProjectAndResetLaneOffset";
+		node.m_comment = "(null)";
+		node.m_isDial = false;
+
+		m_buttonDialInfo.push_back( node );
+	}
+	{
+		TButtonDialInfo node;
+		node.m_hcsmName = "Ado";
+		node.m_name = "AutoControlBrakeLightsOn";
+		node.m_comment = "(null)";
+		node.m_isDial = false;
+
+		m_buttonDialInfo.push_back( node );
+	}
+	{
+		TButtonDialInfo node;
+		node.m_hcsmName = "Ado";
+		node.m_name = "AutoControlBrakeLightsOff";
+		node.m_comment = "(null)";
+		node.m_isDial = false;
+
+		m_buttonDialInfo.push_back( node );
+	}
+	{
+		TButtonDialInfo node;
+		node.m_hcsmName = "Ado";
+		node.m_name = "InhibitLaneChangeOn";
+		node.m_comment = "(null)";
+		node.m_isDial = false;
+
+		m_buttonDialInfo.push_back( node );
+	}
+	{
+		TButtonDialInfo node;
+		node.m_hcsmName = "Ado";
+		node.m_name = "InhibitLaneChangeOff";
 		node.m_comment = "(null)";
 		node.m_isDial = false;
 

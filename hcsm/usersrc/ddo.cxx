@@ -4,7 +4,7 @@
  * Simulation Center, the University of Iowa and The University
  * of Iowa. All rights reserved.
  *
- * Version:      $Id: ddo.cxx,v 1.104 2014/04/10 23:40:31 IOWA\dheitbri Exp $
+ * Version:      $Id: ddo.cxx,v 1.106 2018/09/12 20:44:47 IOWA\dheitbri Exp $
  *
  * Author(s):    Paolo Ammann, Hao Xu, Yefei He
  * Date:         January, 1999
@@ -384,7 +384,25 @@ CDdo::UserDeletion( const CDdoParseBlock* cpSnoBlock )
 #endif
 }  // UserDeletion
 
-
+float GetNumber(
+	boost::tokenizer<boost::char_separator<char> > &tokenizer,
+	boost::tokenizer<boost::char_separator<char> >::iterator& itr) {
+	float ret = -1;
+	string valueStr = *itr;
+	if (valueStr == "%") {
+		++itr;
+		if (itr == tokenizer.end()) return ret;
+		string varName = *itr;
+		ret = ::CHcsmCollection::GetExprVariable(varName);
+		++itr;
+		return ret;
+	}
+	++itr;
+	stringstream ss;
+	ss << valueStr;
+	ss >> ret;
+	return ret;
+}
 //////////////////////////////////////////////////////////////////////////////
 //	
 //	Called by UserActivity()
@@ -471,6 +489,27 @@ CDdo::HandleDials( void )
 				m_doOverideSpeed = false;
 			}
 			m_dialSpeedOverRide.SetNoValue();
+		}
+		if (m_isDiGuy && m_dialDiGuyJointOverride.HasValue()) {
+			typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+			boost::char_separator<char> sep(":;,","%");
+			string dailstr = m_dialDiGuyJointOverride.GetValueStr();
+			m_dialDiGuyJointOverride.SetNoValue();
+			tokenizer tokens(dailstr, sep);
+			tokenizer::iterator itr = tokens.begin();
+			if (itr != tokens.end()) {
+				string jointStr = *itr;
+				itr++;
+				if (itr != tokens.end()) {
+					CDiguyRotationOverride joint;
+					joint.joint = jointStr;
+					joint.HCSMid = m_pDdo->GetId();
+					joint.angles.SetRollA( GetNumber(tokens,itr));
+					joint.angles.SetPitchA(GetNumber(tokens, itr));
+					joint.angles.SetYawA(  GetNumber(tokens, itr));
+					CHcsmCollection::AddDiGuyJointOverride(joint);
+				}
+			}
 		}
 		if (m_isDiGuy &&m_dialDiGuyAction.HasValue() && m_dialDiGuyAction.GetValueStr() != m_currDiGuyActionDialString){
 			typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
@@ -637,6 +676,14 @@ CDdo::CreateCvedObject(
 		CVector3D norm;
 		m_tempPath.reserve(traj.size() *4);
 		m_doOverideSpeed = true;
+        if (cpSnoBlock->GetDuyControlType() == CDdoParseBlock::eGuide) {
+            m_doOverideSpeed = false;
+            cvEObjMode mode;
+            m_pDdo->SetModeType(eCV_DIGUY_GUIDE_CONTROL);
+        }
+        else {
+            m_pDdo->SetModeType(eCV_DIGUY);
+        }
 		m_speedOveride = 0.0;
 		vector<float> times = cpSnoBlock->GetDiGuyActionTime();
 		vector<char> actions =cpSnoBlock->GetDiGuyActionType();

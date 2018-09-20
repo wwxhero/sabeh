@@ -11,6 +11,8 @@ STATE_MACHINE Ddo {
 	DIALS			(Dependent, int)
 	DIALS			(SpeedOverRide, double)
 	DIALS			(DiGuyAction, string)
+	DIALS			(DiGuyJointOverride, string)
+
 	DIAL_INFO       (AudioState, 0, AudioState, int, Audio_bits, 16, The_audio_sound_to_generate)
 	DIAL_INFO       (VisualState, 0, LightState, int, bits, 16, The_state_of_the_light)
 	DIAL_INFO       (VisualState, 1, Duration, int, seconds, 2, How_long_to_keep_light_state)	
@@ -18,7 +20,7 @@ STATE_MACHINE Ddo {
 	DIAL_INFO       (Dependent, 0, Dependent, int, int, 0, Is_the_dDDO_still_dependent)
 	DIAL_INFO       (SpeedOverRide, 0, SpeedOverRide, double, double, 0, Is_the_dDDO_still_dependent)
 	DIAL_INFO       (DiGuyAction, 0, Direction, string, direction, right, Direction_of_lane_change)
-	
+	DIAL_INFO       (DiGuyJointOverride, 0, Direction, string, direction, right, Direction_of_lane_change)
 	
 	
 	MONITOR         (RoadPos, CRoadPos)

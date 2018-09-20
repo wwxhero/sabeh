@@ -4,7 +4,7 @@
  * Simulation Center, the University of Iowa and The University
  * of Iowa. All rights reserved.
  *
- * Version: $Id: ado.cxx,v 1.286 2016/10/28 20:56:06 IOWA\dheitbri Exp $
+ * Version: $Id: ado.cxx,v 1.293 2018/09/07 14:38:45 IOWA\dheitbri Exp $
  *
  * Author:  Omar Ahmad
  *
@@ -27,6 +27,8 @@ using namespace std;
 #include <pi_string>
 
 #include <exception>
+#include<boost/tokenizer.hpp>
+#include <boost/lexical_cast.hpp>
 #include "expevalAdo.h"
 #include <tchar.h>
 
@@ -1159,6 +1161,16 @@ CAdo::UserCreation( const CAdoParseBlock* cpSnoBlock )
 	if( cpSnoBlock->GetIsCreateRelative() )
 	{
         CRoadPos relObjRoadPos = GetRoadposForRelCreate(cpSnoBlock);
+        auto posxyz = relObjRoadPos.GetXYZ();
+        CCved::TIntVec ids;
+        CObjTypeMask mask;
+        mask.Set(eCV_VEHICLE);
+        cved->GetObjsNear(posxyz,5.0f,ids,mask);
+        if (ids.size() > 0){
+            float length = cved->GetObjLength(ids[0]);
+            length += 20.0;
+            relObjRoadPos.Travel(length);
+        }
         if (!relObjRoadPos.IsValid())
             return;
 		//gout << "## final pos = " << createRoadPos << endl;
@@ -1754,7 +1766,7 @@ CAdo::GetRoadposForRelCreate( const CAdoParseBlock* cpSnoBlock){
                         relativeLane--;
                     }
                 }
-            }catch(cvCInternalError	e){
+            }catch(const cvCInternalError	&e){
                 gout<<"Failed to Change Lanes for relative creation with error"<<e.m_msg<<endl;
             }
 
@@ -1843,7 +1855,7 @@ CAdo::GetRoadposForRelCreate( const CAdoParseBlock* cpSnoBlock){
 	//gout << "travelForward = " << travelForward << " ft" << endl;
 	if( travelForward )
 	{
-		if( path.Size() > 0 )
+		if( path.Size() > 0 && !invalidPath )
 		{
 #if 0
 			bool success = path.Initialize( relObjRoadPos );
@@ -1994,6 +2006,8 @@ CAdo::InitializeDynamicsVars(
 	pVehicleObj->SetQryTerrainErrCountImm( 0 );
 	pVehicleObj->SetDynaInitComplete( 0 );
 	pVehicleObj->SetDynaInitCompleteImm( 0 );
+    pVehicleObj->SetExternalDynaControlId(0);
+    pVehicleObj->SetExternalDynaControlIdImm(0);
 }  // end of InitializeDynamicsVars
 
 
@@ -3118,7 +3132,34 @@ CAdo::ParseForcedLaneOffset()
 		gout<<errorStr.str();
 	}
 }  // end of ParseTargetVelocityDial
-
+void 
+CAdo::ParseForcedSteeringAngle(){
+  using boost::lexical_cast;
+  using boost::bad_lexical_cast;
+  string dialStr( GetDialForcedSteeringAngle() ); // avoid string copying
+  typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+  boost::char_separator<char> sep(":;,()");
+  tokenizer tokens(dialStr, sep);
+  tokenizer::iterator itr = tokens.begin();
+  float steeringAngle = 0;
+  float dist=30;
+  if (itr != tokens.end()){
+      try{
+          steeringAngle = boost::lexical_cast<float>(*itr);
+      }catch(const bad_lexical_cast & e){
+          return;
+      }
+      itr++;
+      if (itr != tokens.end()){
+          dist = boost::lexical_cast<float>(*itr);
+      }else{
+          dist = 30.0;
+      }
+  }
+  m_pI->m_forcedPercent = 1.0;
+  m_pI->m_forcedSteerAngle = steeringAngle;
+  m_pI->m_forcedSteerDist = dist;
+}
 //////////////////////////////////////////////////////////////////////////////
 //
 // Description:  Parses the ForcedVelocity dial settings.
@@ -3270,6 +3311,35 @@ CAdo::ParseForcedVelocityDial(
 					haveAccel = true;
 				}
 			}
+		}
+
+		else if( !strcmp( keywd, "stream" ) )
+		{	
+			// changes current value
+			double val   = -1;
+			double accel = -1;
+			char  perc  = 'x';
+			int   numConv;
+			// no established value
+			numConv = sscanf( pToken, "%*s%lf%c%lf", &val, &accel );
+
+			if( numConv == 1 )
+			{
+				// change, no %, no accel
+				m_pI->m_forcedVel      = val * cMPH_TO_MS;
+				targVel                = m_pI->m_forcedVel;
+				m_pI->m_forcedVelAccel = 200.0;		// sentinel for 'no accel'
+				haveAccel              = false;
+			}
+			else if( numConv == 2 )
+			{
+
+				m_pI->m_forcedVel      = val * cMPH_TO_MS;
+				targVel                = m_pI->m_forcedVel;
+				m_pI->m_forcedVelAccel = accel;		// sentinel for 'no accel'
+				haveAccel              = true;
+			}
+			m_pI->m_forcedVelStart = m_pI->m_ageFrame;
 		}
 
 		// format: sin a b c d
@@ -4533,8 +4603,13 @@ CAdo::PreActivityProcessButtonsAndDials( const double& cInitVel )
 		bool haveLane = !( curLane.IsRightMost() );
 		if( haveLane )  m_pI->m_rightLaneChangeButton = true;
 	}
-
-	if( GetButtonProjectAndResetLaneOffset() )
+	if (GetButtonAutoControlBrakeLightsOn()) {
+		m_pI->m_autoControlBrakeLightState = true;
+	}
+	if (GetButtonAutoControlBrakeLightsOff()) {
+		m_pI->m_autoControlBrakeLightState = false;
+	}
+	if( GetButtonProjectAndResetLaneOffset() ) 
 	{
 		//
 		// Add an entry to the activity log for button setting.
@@ -4869,7 +4944,13 @@ CAdo::PreActivityProcessButtonsAndDials( const double& cInitVel )
 	// Process LaneChangeInhibit dial.  Before doing that, decrement the
 	// counter if it already exists.
 	//
-	if( m_pI->m_lcInhibitCount < 0 && m_dialInhibitLaneChange.HasValue() )
+	if (GetButtonInhibitLaneChangeOn()) {
+		m_pI->m_lcInhibitCount = INT_MAX;
+	}
+	else if(GetButtonInhibitLaneChangeOff()){
+		m_pI->m_lcInhibitCount - 1;
+	}
+	else if( m_pI->m_lcInhibitCount < 0 && m_dialInhibitLaneChange.HasValue() )
 	{
 		m_pI->m_lcInhibitCount =
 						static_cast<int>(GetDialInhibitLaneChange() / GetTimeStepDuration());
@@ -4945,6 +5026,16 @@ CAdo::PreActivityProcessButtonsAndDials( const double& cInitVel )
 	}
     if ( m_dialForcedLaneOffset.HasBeenReset()){
 
+    }
+    if (m_dialForcedSteeringAngle.HasValue()){
+        ParseForcedSteeringAngle();
+    }else{
+        if (m_pI->m_forcedPercent>0){
+            m_pI->m_forcedPercent -= 0.05;
+            if (m_pI->m_forcedPercent < 0){
+                m_pI->m_forcedPercent = 0;
+            }
+        }
     }
 }  // end of PreActivityProcessButtonsAndDials
 
@@ -5389,7 +5480,11 @@ CAdo::Activated( const CAdoParseBlock* cpSnoBlock )
 #endif
 
 	DisplayDebugInfo();
-
+	if (!m_pI->m_pObj) {
+		gout << " ADO "<< m_pI->m_objName <<" missing CVED refence" << endl;
+		Suicide();
+		return;
+	}
 	//
 	// Check to see if the vehicle dynamics has seen the ADO off-road
 	// for too long.
@@ -5974,7 +6069,7 @@ CAdo::UserPreActivity( const CAdoParseBlock* cpSnoBlock )
 	//
 	m_pI->m_initCondState = m_initConditions.Execute( cartPos, GetFrame() );
 	const TCHAR* infoStates[] = {"eWAIT", "eACTIVATE", "eUNDER_CONTROL", "eDELETE", "eEXIT"};
-	TRACE(TEXT("Ado %d state:%s\n"), this, infoStates[m_pI->m_initCondState]);
+	//TRACE(TEXT("Ado %d state:%s\n"), this, infoStates[m_pI->m_initCondState]);
 
 	switch( m_pI->m_initCondState )
 	{
@@ -6133,6 +6228,13 @@ CAdo::UserPostActivity( const CAdoParseBlock* cpSnoBlock )
     }else{
         SetMonitorHasStopSignTargetNoValue();
     }
+    
+    if (m_pI->m_pPath && m_pI->m_pPath->IsValid()){
+        double hlddist = m_pI->m_pPath->GetDistToNextHldOfs(m_pI->m_roadPos,3);
+        SetMonitorDistanceToNextHldOffset(hlddist);
+    }else{
+        SetMonitorDistanceToNextHldOffsetNoValue();
+    }
 	//
 	// Get outputs from the active child.
 	//
@@ -6142,7 +6244,15 @@ CAdo::UserPostActivity( const CAdoParseBlock* cpSnoBlock )
 	// Write outputs to CVED control inputs.
 	//
 	CPoint3D targPos = GetOutputTargPosFromRemoteControl();
-
+    if (m_pI->m_forcedPercent > 0){
+        auto tangent = pVehicleObj->GetTan();
+        tangent.RotZ(-m_pI->m_forcedSteerAngle * cDEG_TO_RAD);
+        tangent = tangent * m_pI->m_forcedPercent * m_pI->m_forcedSteerDist;
+        auto diff = targPos - pVehicleObj->GetPos(); 
+        targPos = pVehicleObj->GetPos();
+        diff = (diff * (1-m_pI->m_forcedPercent) + tangent);
+        targPos += diff;
+    }
     pVehicleObj->StoreOldTargPos();
 	pVehicleObj->SetTargPos( targPos );
 
@@ -6232,7 +6342,7 @@ CAdo::UserPostActivity( const CAdoParseBlock* cpSnoBlock )
 	pVehicleObj->SetHaveSteer( haveSteer );
 	if( haveSteer )
 	{
-		pVehicleObj->SetTargSteer( GetOutputTargSteerFromRemoteControl() );
+        pVehicleObj->SetTargSteer( GetOutputTargSteerFromRemoteControl() );
 	}
 
     bool haveSteerMax = HasValueOutputMaxSteerFromRemoteControl();
@@ -6376,11 +6486,12 @@ CAdo::UserDeletion( const CAdoParseBlock* cpSnoBlock )
 	//
 	// Add an entry to the activity log for HCSM deletion.
 	//
-	m_pRootCollection->SetHcsmDeleteLog(
-				this,
-				m_pI->m_roadPos.GetXYZ()
-				);
-
+	if (m_pI->m_roadPos.IsValid()) {
+		m_pRootCollection->SetHcsmDeleteLog(
+			this,
+			m_pI->m_roadPos.GetXYZ()
+		);
+	}
 	//
 	// Release the rng stream id.
 	//
@@ -6463,6 +6574,7 @@ CRemoteControl::RemoteControlPostActivity()
 	//
 	// Resolve target position.
 	//
+    
     if( HasValueOutputTargPosFromLaneChange() && !pI->m_reporjectAndResetLaneOffsetButton )
 	{
 		SetOutputTargPos( GetOutputTargPosFromLaneChange() );

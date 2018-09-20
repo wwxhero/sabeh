@@ -765,6 +765,131 @@ void CMonitorCRoadPos::SetValueStr( const string& value )
 }
 
 //////////////////////////////////////////////////////////////
+// CMonitorfloat
+//////////////////////////////////////////////////////////////
+
+CMonitorfloat::CMonitorfloat( CHcsmCollection* pRootCollection, string name ):
+    CMonitor( pRootCollection, name )
+{
+
+}
+
+CMonitorfloat::CMonitorfloat( const CMonitorfloat& objToCopy ):
+    CMonitor( objToCopy.m_pRootCollection, objToCopy.m_name )
+{
+
+    // call the assignment operator
+    *this = objToCopy;
+
+}
+
+CMonitorfloat& CMonitorfloat::operator=(
+            const CMonitorfloat& objToCopy
+            )
+{
+
+    // check to see if the object passed in is really me
+    if ( this != &objToCopy ) {
+
+        // make a deep copy
+        m_valueA = objToCopy.m_valueA;
+        m_valueB = objToCopy.m_valueB;
+
+    }
+
+    return *this;
+
+}
+
+CMonitorfloat::~CMonitorfloat()
+{
+
+}
+
+float CMonitorfloat::GetValue()
+{
+    bool writtenThisFrame = m_setFrame == GetFrame();
+    if( writtenThisFrame )
+    {
+        // make sure that dial has a value
+        if( !m_hasValueB )
+        {
+            cerr << MyName() << "::GetValue: dial has no value" << endl;
+        }
+
+        return m_valueB;
+    }
+    else
+    {
+        // make sure that dial has a value
+        if( !m_hasValueA )
+        {
+            cerr << MyName() << "::GetValue: dial has no value" << endl;
+        }
+
+        return m_valueA;
+    }
+}
+
+string CMonitorfloat::GetValueStr()
+{
+    string strValue = "";
+    float curValue;
+
+
+    bool writtenThisFrame = m_setFrame == GetFrame();
+    if( writtenThisFrame )
+    {
+        // make sure that dial has a value
+        if( !m_hasValueB )
+        {
+            cerr << MyName() << "::GetValue: dial has no value" << endl;
+        }
+
+        curValue = m_valueB;
+    }
+    else
+    {
+        // make sure that dial has a value
+        if( !m_hasValueA )
+        {
+            cerr << MyName() << "::GetValue: dial has no value" << endl;
+        }
+
+        curValue = m_valueA;
+    }
+    
+    sprintf(&*strValue.begin(), "%f", curValue);
+    return strValue;
+
+}
+
+void CMonitorfloat::SetValue( float value )
+{
+    bool writtenThisFrame = m_setFrame == GetFrame();
+    if( !writtenThisFrame )
+    {
+        m_valueB = m_valueA;
+        m_valueA = value;
+    }
+    
+    CMonitor::SetValue();
+}
+
+void CMonitorfloat::SetValueStr( const string& value )
+{
+
+    bool writtenThisFrame = m_setFrame == GetFrame();
+    if( !writtenThisFrame )
+    {
+        m_valueB = m_valueA;
+        m_valueA = atof(value.c_str());
+    }
+    
+    CMonitor::SetValue();
+}
+
+//////////////////////////////////////////////////////////////
 // CMonitorCCrdr
 //////////////////////////////////////////////////////////////
 

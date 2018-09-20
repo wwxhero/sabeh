@@ -3,7 +3,7 @@
  * Simulation Center, the University of Iowa and The University
  * of Iowa. All rights reserved.
  *
- * Version: $Id: staticobjmanagerutil.cxx,v 1.17 2013/05/08 15:31:03 IOWA\vhorosewski Exp $
+ * Version: $Id: staticobjmanagerutil.cxx,v 1.18 2018/09/07 14:38:23 IOWA\dheitbri Exp $
  *
  * Author:  Matt Schikore
  *
@@ -151,7 +151,7 @@ StaticObjManInitialSetup(
 			fprintf( 
 				stderr, 
 				"StaticObjManagerUtil: unable to create static object named '%s'\n", 
-				rB.GetName() 
+				rB.GetName().c_str()
 				);
 			continue;
 		}

@@ -4,7 +4,7 @@
  * Simulation Center, the University of Iowa and The University
  * of Iowa. All rights reserved.
  *
- * Version:      $Id: codegen.c,v 1.64 2011/07/08 22:41:17 iowa\dheitbri Exp $
+ * Version:      $Id: codegen.c,v 1.65 2018/07/16 14:22:33 IOWA\dheitbri Exp $
  *
  * Author:       Yiannis Papelis, Omar Ahmad, Ben Wehrle
  * Date:         November, 1995
@@ -329,7 +329,7 @@ static void GenStorageDerivedClassHeader(
 	fprintf( pFile, "private:\n" );
 
 	/* the private member that holds the value */
-	fprintf( pFile, "%s%s m_value;\n", pTab, pClassType, pValueVarName );
+	fprintf( pFile, "%s%s  %s ;\n", pTab, pClassType, pValueVarName );
 
 	fprintf( pFile, "};\n" );
 	fprintf( pFile, "\n" );

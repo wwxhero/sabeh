@@ -4,7 +4,7 @@
  * Simulation Center, the University of Iowa and The University
  * of Iowa. All rights reserved.
  *
- * Version:      $Id: adoinfo.h,v 1.83 2016/04/01 19:23:36 IOWA\dheitbri Exp $
+ * Version:      $Id: adoinfo.h,v 1.84 2018/05/17 16:27:08 IOWA\dheitbri Exp $
  *
  * Author(s):    Omar Ahmad
  *
@@ -393,6 +393,10 @@ public:
 
 	float       m_fwdTimeThreshold;
 	float		m_backTimeThreshold;
+
+    float       m_forcedPercent;				//< How Much we are mixing in external steering override with  
+    float       m_forcedSteerAngle;				//< steering angle
+    float       m_forcedSteerDist;				//< how far to project out the target point for forced steering override
 };
 
 #endif // __CADOINFO_H

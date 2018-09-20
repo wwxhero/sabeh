@@ -4,7 +4,7 @@
  * Simulation Center, the University of Iowa and The University
  * of Iowa. All rights reserved.
  *
- * Version: $Id: ado_freedrive.cxx,v 1.107 2016/01/26 21:16:24 IOWA\dheitbri Exp $
+ * Version: $Id: ado_freedrive.cxx,v 1.109 2018/08/17 22:39:34 IOWA\dheitbri Exp $
  *
  * Author:  Omar Ahmad
  *
@@ -56,7 +56,7 @@ CFreeDrive::Creation()
 	m_maintainGapDurationCounter = 0;
 	m_maintainGapCounter = 0;
 	m_prevDistToCurv = 0.0;
-
+	m_lastDistanceLookAhead = -1.0f;
 }  // end of Creation
 
 
@@ -991,6 +991,16 @@ CFreeDrive::GetCurvatureTargAccel(
 #endif
 		targDist -= pI->m_objLength * 0.5 * cFEET_TO_METER;
 		if ( targDist < 0.0 )  targDist = 0.0;
+		
+		float aggr = pI->m_aggressiveness;
+		aggr = max(min(1.0f,aggr),0.0f);
+		aggr = aggr*1 + 0.5;
+		targVel = targVel * aggr;
+
+		aggr = pI->m_aggressiveness;
+		aggr = max(min(1.0f,aggr),0.0f);
+		aggr = (1.0-aggr)*1 + 0.5;  
+		targDist = targDist * aggr;
 
 		targAccel = LinearDecelController( 
 								pI->m_currVel, 
@@ -998,13 +1008,27 @@ CFreeDrive::GetCurvatureTargAccel(
 								targDist * cFEET_TO_METER 
 								);
 
+
 		return true;
 	}
 
 	return false;
 }
 
+CVector3D calcFowardDifferential (			
+	        CAdoInfoPtr pI, 
+			CRoadPos& targRoadPos,
+			CVector3D& lastTargetTangent
+			){
+    //we are not on a sharp curve or recovering from a sharp curve
+    CVector3D vec1 = pI->m_roadPos.GetTangentInterpolated();
+	float yawRate = pI->m_pObj->GetYawRate();
+    CVector3D vec2 = targRoadPos.GetTangentInterpolated()*0.1 + lastTargetTangent*0.9;
+    CVector3D vec3 = (vec1-vec2);
+	lastTargetTangent = vec2;
+	return vec3;
 
+}
 //////////////////////////////////////////////////////////////////////////////
 ///\brief
 ///		adjust the target point for the curve of the road
@@ -1029,9 +1053,18 @@ CFreeDrive::AdjustTargRoadPosForCurves(
 	double currentMaxOffset = cMAX_OFFSET;
 
     //we are not on a sharp curve or recovering from a sharp curve
-    CVector3D vec1 = pI->m_roadPos.GetTangentInterpolated();
-    CVector3D vec2 = targRoadPos.GetTangentInterpolated();
-    CVector3D vec3 = vec1-vec2;
+	CVector3D fowardDif;
+	if (m_laneOffsetPrevFrame > 0) {
+		fowardDif = calcFowardDifferential(pI, targRoadPos, m_tangentPrev);
+	}
+	else {
+		CVector3D vec1 = pI->m_roadPos.GetTangentInterpolated();
+		float yawRate = pI->m_pObj->GetYawRate();
+		CVector3D vec2 = targRoadPos.GetTangentInterpolated();
+		CVector3D vec3 = (vec1 - vec2);
+		m_tangentPrev = vec2;
+		fowardDif = vec3;
+	}
 	//check to see if we need to reduce our max offset due to lane width
 	if (targRoadPos.IsRoad()){
 		double laneWidth = targRoadPos.GetLane().GetWidth();
@@ -1054,22 +1087,22 @@ CFreeDrive::AdjustTargRoadPosForCurves(
 	//Scaling this by 1/3 the segment length
 	//was found through experimentations
 	//to work well, this should be parmaiterized 
-	vec3.Scale(targetSeg.Length()/3);
+	fowardDif.Scale(targetSeg.Length()/3);
 
-    if (vec3.Length() > currentMaxOffset){
-        vec3.Scale(currentMaxOffset/vec3.Length());
-    }
+    //if (fowardDif.Length() > currentMaxOffset){
+    //    fowardDif.Scale(currentMaxOffset/fowardDif.Length());
+    //}
     if (m_laneOffsetPrevFrame > 0){
-        CVector3D vecDif  = vec3 - m_curveOffsetPrev;
+        CVector3D vecDif  = fowardDif - m_curveOffsetPrev;
         double vec_length = vecDif.Length();
         if (vecDif.Length() > 0.2f){
             vecDif.Scale(0.2/vec_length);
         }
-        vec3 = m_curveOffsetPrev + vecDif;
+        fowardDif = m_curveOffsetPrev + vecDif;
     }
     CPoint3D projectedXYZ  = targRoadPos.GetBestXYZ();
 	CRoadPos tempRoadPos(targRoadPos);
-	tempRoadPos.SetXYZ(projectedXYZ + vec3);
+	tempRoadPos.SetXYZ(projectedXYZ + fowardDif); //set new target point
 	if (tempRoadPos.IsValid()){
 		targRoadPos = tempRoadPos;
 		//now we will want to allign the new target point with the same crdr settings as 
@@ -1102,7 +1135,7 @@ CFreeDrive::AdjustTargRoadPosForCurves(
 	float currentOffset = targRoadPos.GetOffset();
 	m_laneOffsetPrev = currentOffset; 
 	m_laneOffsetPrevFrame = GetFrame();
-	m_curveOffsetPrev = vec3;
+	m_curveOffsetPrev = fowardDif;
         
 }
 		
@@ -1363,8 +1396,16 @@ CFreeDrive::PostActivity()
 		const double cMIN_DIST_AHEAD = 2.0;  // feet
 
 		const double cMAX_DIST_AHEAD = 102.5; // feet (around 70 mph)
-
-		distForTargPos = currVel * cSECONDS_AHEAD * cMETER_TO_FEET;
+		if (m_lastDistanceLookAhead < 0) {
+			distForTargPos = currVel * cSECONDS_AHEAD * cMETER_TO_FEET;
+		}
+		else{
+			pI->m_aggressiveness;
+			float timeLookAhead = cSECONDS_AHEAD ;
+			distForTargPos = currVel * timeLookAhead * cMETER_TO_FEET;
+			distForTargPos =  distForTargPos*.035 +  m_lastDistanceLookAhead *.965;
+			m_lastDistanceLookAhead =distForTargPos;
+	    }
 		double distToFrontBumper = pI->m_objLength * 0.5;
 		double minDist = cMIN_DIST_AHEAD + distToFrontBumper;
 		double maxDist = cMAX_DIST_AHEAD + distToFrontBumper;

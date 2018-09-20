@@ -3,7 +3,7 @@
 // (C) Copyright 1998 by NADS & Simulation Center, The University of
 //     Iowa.  All rights reserved.
 //
-// Version:     $Id: action.cxx,v 1.40 2016/05/05 22:13:33 IOWA\dheitbri Exp $
+// Version:     $Id: action.cxx,v 1.42 2017/08/16 20:21:03 IOWA\dheitbri Exp $
 // Author(s):   Jillian Vogel
 // Date:        June, 1999
 //
@@ -126,7 +126,16 @@ CAction::GetDelay() const
 	return m_delay;
 }
 
-
+template<class T> bool AddAction(const CSnoBlock::cTChildIterator &pChild,CAction::TActionVec &actions,
+    CActionParseBlock* pActnPBlock,CHcsmCollection* pHC){
+	if( pChild->GetBlockName() == T::Name() )
+	{
+		actions.push_back( CAction::TActionPtr(new T( pActnPBlock, pHC ) ) );
+        return true;
+	}
+    return false;
+}
+ //pChild->GetBlockName() == CCreateRandomGen::Name()
 //////////////////////////////////////////////////////////////////////////////
 //
 // Description:  Function called to fill a vector of CAction* with the 
@@ -274,22 +283,13 @@ GetActions(
 		else if ( pChild->GetBlockName() == "SetHeadlight"){
 			actions.push_back( CAction::TActionPtr(new CSetHeadlights( pActnPBlock, pHC ) ) );
 		}
-		else if ( pChild->GetBlockName() == CCreateRandomGen::Name()){
-			actions.push_back( CAction::TActionPtr(new CCreateRandomGen( pActnPBlock, pHC ) ) );
-		}
-		else if ( pChild->GetBlockName() == CWriteUniformActn::Name()){
-			actions.push_back( CAction::TActionPtr(new CWriteUniformActn( pActnPBlock, pHC ) ) );
-		}
-		else if ( pChild->GetBlockName() == CAttachShaderActn::Name()){
-			actions.push_back( CAction::TActionPtr(new CAttachShaderActn( pActnPBlock, pHC ) ) );
-		}
-		else if ( pChild->GetBlockName() == CSetSwitchActn::Name()){
-			actions.push_back( CAction::TActionPtr(new CSetSwitchActn( pActnPBlock, pHC ) ) );
-		}
-		else if ( pChild->GetBlockName() == CUpdateTodActn::Name()){
-			actions.push_back( CAction::TActionPtr(new CUpdateTodActn( pActnPBlock, pHC ) ) );
-		}
-
+		else if (AddAction<CCreateRandomGen> (pChild,actions,pActnPBlock, pHC )){}
+		else if (AddAction<CWriteUniformActn>(pChild,actions,pActnPBlock, pHC )){}
+		else if (AddAction<CAttachShaderActn>(pChild,actions,pActnPBlock, pHC )){}
+		else if (AddAction<CSetSwitchActn>   (pChild,actions,pActnPBlock, pHC )){}
+		else if (AddAction<CAttachShaderActn>(pChild,actions,pActnPBlock, pHC )){}
+        else if (AddAction<CSpotlightAction> (pChild,actions,pActnPBlock, pHC )){}
+        else if (AddAction<CSetEnvCondition> (pChild,actions,pActnPBlock, pHC )){}
             
 	}
 }

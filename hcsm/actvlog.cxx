@@ -4,7 +4,7 @@
  * Simulation Center, the University of Iowa and The University
  * of Iowa. All rights reserved.
  *
- * Version: $Id: actvlog.cxx,v 1.5 2016/10/28 20:53:08 IOWA\dheitbri Exp $
+ * Version: $Id: actvlog.cxx,v 1.6 2018/03/27 14:48:56 IOWA\dheitbri Exp $
  *
  * Author:  Yiannis Papelis
  *
@@ -19,6 +19,11 @@
 
 // Provide consistency in error messages
 static const char s_Pre[] = "Activity Log";
+#if (_MSC_VER > 1500)
+    #pragma warning( push )
+    #pragma warning(disable:4996)
+#endif
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -388,7 +393,9 @@ CActvLog::StoreNode(
 	return true;
 }
 
-
+#if (_MSC_VER > 1500)
+    #pragma warning( pop )
+#endif
 #if 0
 int main(int argc, char* argv[])
 {

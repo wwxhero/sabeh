@@ -34,7 +34,7 @@ public:
     void SetValue( CAdoInfoPtr );
 
 private:
-    CAdoInfoPtr m_value;
+    CAdoInfoPtr  m_value ;
 };
 
 //////////////////////////////////////////////////////////////
@@ -52,7 +52,7 @@ public:
     void SetValue( double );
 
 private:
-    double m_value;
+    double  m_value ;
 };
 
 //////////////////////////////////////////////////////////////
@@ -70,7 +70,7 @@ public:
     void SetValue( CLcCondsPtr );
 
 private:
-    CLcCondsPtr m_value;
+    CLcCondsPtr  m_value ;
 };
 
 //////////////////////////////////////////////////////////////
@@ -88,7 +88,7 @@ public:
     void SetValue( CPoint3D );
 
 private:
-    CPoint3D m_value;
+    CPoint3D  m_value ;
 };
 
 //////////////////////////////////////////////////////////////
@@ -106,7 +106,7 @@ public:
     void SetValue( double );
 
 private:
-    double m_value;
+    double  m_value ;
 };
 
 //////////////////////////////////////////////////////////////
@@ -124,7 +124,7 @@ public:
     void SetValue( string );
 
 private:
-    string m_value;
+    string  m_value ;
 };
 
 //////////////////////////////////////////////////////////////
@@ -142,7 +142,7 @@ public:
     void SetValue( bool );
 
 private:
-    bool m_value;
+    bool  m_value ;
 };
 
 //////////////////////////////////////////////////////////////
@@ -160,7 +160,7 @@ public:
     void SetValue( int );
 
 private:
-    int m_value;
+    int  m_value ;
 };
 
 

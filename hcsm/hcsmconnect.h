@@ -4,7 +4,7 @@
 // Simulation Center, the University of Iowa and The University
 // of Iowa. All rights reserved.
 //
-// Version:      $Id: hcsmconnect.h,v 1.17 2016/10/28 20:49:21 IOWA\dheitbri Exp $
+// Version:      $Id: hcsmconnect.h,v 1.19 2018/05/18 13:59:58 IOWA\dheitbri Exp $
 // Author:       Yiannis Papelis
 // Date:         August, 1999
 //
@@ -47,7 +47,7 @@ using namespace CVED;
 #endif
 
 #include "debugitem.h"
-
+#include "workerthread.h"
 // where the hcsmexec server listens for connections
 #define DEFAULT_PORT  3333
 
@@ -62,7 +62,18 @@ struct TMsgHeader {
 	short		m_OpCode;			// message opcode
 	long		m_MsgLen;			// length of message, including header
 };
-
+struct TADOState
+{
+TU16b			  visualState;	/*   1: left turn signal        */
+								/*   2: right turn signal       */
+								/*   4: hazard lights           */
+								/*   8: high beam lights        */
+								/*  16: brake lights            */
+								/*  32: operating lights        */
+								/*  64: backup lights           */
+float             laneOffset;
+float             hldOffsetDist;
+}; 
 //
 // This structure encapsulates the information associated with
 typedef struct TCommObjState {
@@ -74,6 +85,8 @@ typedef struct TCommObjState {
 	double            vel;          /* velocity along tangent */
 	short             colorIndex;   /* Color index for vehicles */
 	union Specific {
+        TADOState         adoState;
+
 		TU16b			  visualState;	/*   1: left turn signal        */
 										/*   2: right turn signal       */
 										/*   4: hazard lights           */
@@ -81,7 +94,7 @@ typedef struct TCommObjState {
 										/*  16: brake lights            */
 										/*  32: operating lights        */
 										/*  64: backup lights           */
-		eCVTrafficLightState	state;	/* Current state of the        */ 
+		eCVTrafficLightState	state;	/* Current state of the        */
 										/* traffic light               */
 		struct Enviro {
 			TPoint2D          vertex[cCV_MAX_ENVIRO_VERTS];
@@ -173,10 +186,38 @@ struct TMessage {
 					   dbgItems[2];
 	} data;
 };
+struct TUDPMsgHeader{
+    SOCKADDR_IN senderAddr;
+    int msgSize;
+};
+
+class CUdpThread: public CAccumulatorBufferThread{
+public:
+    CUdpThread(unsigned short port);
+    virtual void BufferLoop(TBuffRef) override;
+    bool Start() override;
+    bool Stop() override;
+protected:
+    unsigned short m_port;
+    SOCKET m_socket;
+};
+
+class CUdpSender{
+public:
+    typedef std::unique_ptr<CUdpSender> TRef;
+    CUdpSender();
+    ~CUdpSender();
+    void Send(const TUDPMsgHeader msg, const TMessage &msgs);
+protected:
+    SOCKET m_socket;
+};
+
+
+int ReadMessage(std::vector<char>& buff, TMessage &msgs, TUDPMsgHeader &header);
 
 extern SOCKET WaitForConnection(int port);
 extern SOCKET CreateNonBlockingSocket(int port);
-extern SOCKET PollSocketForConnection(int sock);
+extern SOCKET PollSocketForConnection(SOCKET sock);
 extern int  ReadHeader(SOCKET sock, TMsgHeader &);
 extern int  ReadMessage(SOCKET sock, const TMsgHeader &, TMessage &);
 extern bool SendMessage(SOCKET sock, int cmd, const void *, int size);
@@ -185,7 +226,7 @@ extern SOCKET ConnectToSocket(const char ip[], int port);
 extern bool StartNewProcess(char* const args[]);
 extern bool CloseSocket(SOCKET sock);
 extern void CvedDataToCommData( const cvTObjState&, TCommObjState&, cvEObjType, CCved* pCved, int id);
-
+extern void CvedDataToCommDataLE( const cvTObjState&, TCommObjState&, cvEObjType, CCved* pCved, int id);
 #define CMD_PING               1
 #define CMD_SCENSCRIPT         2
 #define CMD_SCENSCRIPTMULTI    3
@@ -203,6 +244,11 @@ extern void CvedDataToCommData( const cvTObjState&, TCommObjState&, cvEObjType, 
 #define CMD_CONTROLOBJ        15
 #define CMD_RELEASEOBJCONTROL 16
 #define CMD_GETCHANGEDSTATICOBJS 17
+#define CMD_SETDAIL           18
+#define CMD_RESETDAIL         19
+
+#define CMD_GETDYNAOBJS_RESP   118
+#define CMD_TAKEOBJCONTROL_ACK 119
 
 #define CMD_QUIT              99
 

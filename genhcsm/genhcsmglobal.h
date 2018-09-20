@@ -26,6 +26,7 @@
 
 #include <set>
 #include <vector>
+#include <memory>
 using namespace std;
 
 #include "util.h"
@@ -42,7 +43,9 @@ using namespace std;
 #include "expeval.h"
 #include "expevalAdo.h"
 #include "expevalTTA.h"
-
+#include "workerthread.h"
+class CUdpThread;
+typedef std::unique_ptr<CUdpThread> TUdpThreadPtr;
 typedef class CAdoInfo* CAdoInfoPtr;
 typedef class CLaneChangeConds* CLcCondsPtr;
 typedef queue<CVehFailClient::TVehFailure>  TFailureQueue;

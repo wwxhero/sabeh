@@ -5,7 +5,7 @@
  * Simulation Center, the University of Iowa and The University
  * of Iowa. All rights reserved.
  *
- * Version:      $Id: GraphicsStateAdapter.h,v 1.5 2016/07/15 14:47:51 IOWA\dheitbri Exp $
+ * Version:      $Id: GraphicsStateAdapter.h,v 1.7 2017/05/03 16:58:48 IOWA\dheitbri Exp $
  *
  * Author(s):    D.A. Heitbrink
  *
@@ -48,6 +48,9 @@ public:
 	bool AddVisualCommands();
 	bool UpdateDynamicObjects();
 	bool UpdateHeadlights();
+    bool InitVirtualObjects();
+    bool SetEnv();
+    bool AddPreCreates();
 	int TrafLightSwitchStateFromTrafficLightState(int) const;
 	static const int EMPTY_OBJ_TYPE = 0;
 	static const int EMPTY_OBJ_ID = 9999;

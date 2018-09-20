@@ -4,7 +4,7 @@
  * Simulation Center, the University of Iowa and The University
  * of Iowa. All rights reserved.
  *
- * Version: $Id: adoinfo.cxx,v 1.76 2015/11/18 16:14:24 IOWA\dheitbri Exp $
+ * Version: $Id: adoinfo.cxx,v 1.77 2018/05/17 16:27:08 IOWA\dheitbri Exp $
  *
  * Author:  Omar Ahmad
  *
@@ -94,7 +94,10 @@ CAdoInfo::CAdoInfo(
 	m_audioStateFromDialCount( -1 ),
 	m_lastOvel(-1),
 	m_hasMoved(false),
-    m_gapStartFrame(-1)
+    m_gapStartFrame(-1),
+    m_forcedPercent(0),				 
+    m_forcedSteerAngle(0),				
+    m_forcedSteerDist(1.0)				
 {
 
 	SetCurrRoadPos( roadPos );
@@ -288,6 +291,9 @@ CAdoInfo::operator=( const CAdoInfo& cRhs )
 		m_audioStateFromDial       = cRhs.m_audioStateFromDial;
 		m_audioStateFromDialCount  = cRhs.m_audioStateFromDialCount;
         m_gapStartFrame            = cRhs.m_gapStartFrame;
+        m_forcedPercent            = cRhs.m_forcedPercent   ;				//< How Much we are mixing in external steering override with  
+        m_forcedSteerAngle         = cRhs.m_forcedSteerAngle;				//< steering angle
+        m_forcedSteerDist          = cRhs.m_forcedSteerDist;				//< how far to project out the target point for forced steering override
 	}
 
 	return *this;

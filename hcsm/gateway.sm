@@ -10,7 +10,17 @@ STATE_MACHINE Gateway {
 	PRIV_DECL		void HandleGetInstObjsMsg(int sock, TMsgHeader &head);
 	PRIV_DECL		void HandleTakeObjControlMsg(int sock, TMsgHeader &head);
 	PRIV_DECL		void HandleControlObjMsg(int sock, TMsgHeader &head);
-	PRIV_DECL		void HandleReleaseObjCntrlMsg(int sock, TMsgHeader &head);
+	PRIV_DECL		void HandleReleaseObjCntrlMsg(int sock, TMsgHeader &head, const TUDPMsgHeader&);
+	PRIV_DECL		void DispatchUdpMessage(TMessage &incommingMsg, const TUDPMsgHeader&);
+	PRIV_DECL		void HandleGetDynaObjsMsg(TMessage &incommingMsg, const TUDPMsgHeader&);
+	PRIV_DECL		void HandleGetInstObjsMsg(TMessage &incommingMsg, const TUDPMsgHeader&);
+	PRIV_DECL		void HandleTakeObjControlMsg(TMessage &incommingMsg, const TUDPMsgHeader&);
+	PRIV_DECL		void HandleControlObjMsg(TMessage &incommingMsg, const TUDPMsgHeader&);
+	PRIV_DECL		void HandleReleaseObjCntrlMsg(TMessage &incommingMsg, const TUDPMsgHeader&);
+	PRIV_DECL		void HandleSetDailMsg(TMessage &incommingMsg, const TUDPMsgHeader&);
+	PRIV_DECL		void HandleResetDailMsg(TMessage &incommingMsg, const TUDPMsgHeader&);
+	PRIV_DECL       TUdpThreadPtr m_udpWorker;
+	PRIV_DECL       CUdpSender::TRef m_udpSender;
 }
 
 CREATE_CB GWCreate

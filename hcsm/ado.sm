@@ -11,9 +11,14 @@ STATE_MACHINE Ado {
 	BUTTONS         (TurnLeft, Turn_left)
 	BUTTONS			(TurnRight, Turn_right)
     BUTTONS			(ProjectAndResetLaneOffset, Project_and_reset_lane_offset)
+	BUTTONS			(AutoControlBrakeLightsOn, Turn_On_Auto_Control_BrakeLights)
+	BUTTONS			(AutoControlBrakeLightsOff,Turn_Off_Auto_Control_BrakeLights)
+	BUTTONS         (InhibitLaneChangeOn, Inhibit_LaneChange_On)
+	BUTTONS         (InhibitLaneChangeOff, Inhibit_LaneChange_Off)
 	DIALS           (AudioState, string)
 	DIALS			(ForcedLaneOffset, string, Forced_Lane_Offset)
 	DIALS           (ForcedVelocity, string, Forced_Velocity)
+	DIALS           (ForcedSteeringAngle, string, Forced_Steering_Angle)
 	DIALS           (ImStop, double, private)
 	DIALS           (InhibitLaneChange, double, Inhibit_optional_lane_change_behavior)
 	DIALS           (LaneChange, string, Lane_Change)
@@ -62,6 +67,7 @@ STATE_MACHINE Ado {
 	DIAL_INFO       (LaneChangeStatus, 1, Duration, int, seconds, 2, How_long_to_keep_this_condition)	
 	
 	MONITOR         (RoadPos, CRoadPos)
+	MONITOR         (DistanceToNextHldOffset, float)
 	MONITOR         (TargCrdr, CCrdr)
 	MONITOR         (StoppedBehindObj, int)
 	MONITOR         (HasStopSignTarget, bool)
@@ -103,6 +109,7 @@ STATE_MACHINE Ado {
 	PRIV_DECL       void ParseAudioStateDial();
 	PRIV_DECL       void ParseVisualStateDial();
 	PRIV_DECL		void ParseForcedLaneOffset();
+	PRIV_DECL		void ParseForcedSteeringAngle();
 	PRIV_DECL       bool ParseForcedVelocityDial( const double &cv, double& targVel, bool& haveAccel, double& targAccel );
 	PRIV_DECL       void ClearTurnSignals();
 	PRIV_DECL       void SetTurnSignals();
@@ -232,6 +239,7 @@ STATE_MACHINE FreeDrive {
 	PRIV_DECL       long m_laneOffsetPrevFrame;
 	PRIV_DECL       double m_laneOffsetPrev;
 	PRIV_DECL       CVector3D m_curveOffsetPrev;
+	PRIV_DECL       CVector3D m_tangentPrev;
 	PRIV_DECL       long m_currFollEngTime;
 	PRIV_DECL       double m_initFollDist;
 	PRIV_DECL       int  m_lastMaintainGapId;
@@ -240,6 +248,7 @@ STATE_MACHINE FreeDrive {
 	PRIV_DECL       int m_maintainGapDurationCounter;
 	PRIV_DECL       int m_maintainGapCounter;
 	PRIV_DECL       double m_prevDistToCurv;
+	PRIV_DECL       double m_lastDistanceLookAhead;
 	PRIV_DECL       long m_refreshSpeedRandomizationFrame;
 	PRIV_DECL       double m_speedRandomization;
 	PRIV_DECL       double RandomizeVelocity( CAdoInfoPtr pI, const double, int );

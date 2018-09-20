@@ -4,7 +4,7 @@
  * Simulation Center, the University of Iowa and The University
  * of Iowa. All rights reserved.
  *
- * Version: $Id: daqdriver.cxx,v 1.14 2004/04/27 19:14:58 schikore Exp $
+ * Version: $Id: daqdriver.cxx,v 1.15 2018/03/27 14:48:17 IOWA\dheitbri Exp $
  *
  * Author:  Omar Ahmad, Sunil Bulusu
  *
@@ -54,7 +54,7 @@ CDaqDriver::UserCreation( const CDaqDriverParseBlock* cpSnoBlock )
 	if( getenv( "NADSSDC_SCN" ) ) 
 	{
 		strncpy( pDaqPosFilePath, getenv( "NADSSDC_SCN" ),1024);
-		strncpy( pDaqOriFilePath, getenv( "NADSSDC_SCN" ),2014);
+		strncpy( pDaqOriFilePath, getenv( "NADSSDC_SCN" ),1024);
 	}
 	else
 	{

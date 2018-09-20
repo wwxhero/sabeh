@@ -4,7 +4,7 @@
 // Simulation Center, the University of Iowa and The University
 // of Iowa. All rights reserved.
 //
-// Version:      $Id: hcsmclient.cxx,v 1.31 2016/10/28 20:51:47 IOWA\dheitbri Exp $
+// Version:      $Id: hcsmclient.cxx,v 1.33 2018/05/17 16:27:08 IOWA\dheitbri Exp $
 //
 // Author(s):    Yiannis Papelis
 //
@@ -385,7 +385,7 @@ CHcsmClient::StartScenario(
 	strcpy_s(pBuf,2, LriDir.c_str());
 	char   *pScnDirBuf = (char *)&data[256/sizeof(double)];
 	strcpy_s(pScnDirBuf,2 + 512/sizeof(double), scnDir.c_str());
-	int   totlen = 256 + scnDir.length() + 1;
+	int   totlen = 256 + (int)scnDir.length() + 1;
 	
 	if ( !SendMessage(m_CmdSock, CMD_SIMPARAMS, data, totlen ) ) {
 #ifdef _DEBUG_LIBRARY_
@@ -654,8 +654,8 @@ CHcsmClient::SetDebugMode(TDebugMode Mode, const vector<int> &HcsmSet, int level
 	// HCSM is specified, and its ID is -1, that means to apply the change
 	// to all the HCSMs.
 	msg.data.shorts[0] = (short)Mode;
-	msg.data.shorts[1] = level;
-	msg.data.shorts[2] = HcsmSet.size();
+	msg.data.shorts[1] = (short)level;
+	msg.data.shorts[2] = (short)HcsmSet.size();
 	i = 3;
 	for ( pI = HcsmSet.begin(); pI != HcsmSet.end(); pI++ ) {
 		if ( i < maxIdInMsg ) {
@@ -1476,7 +1476,7 @@ bool
 CHcsmClient::ConnectToDataSock(void)
 {
 	m_DataSock = ConnectToSocket(m_IpAddr, DEFAULT_PORT+1);
-	if ( m_DataSock < 0  ) {
+	if ( m_DataSock == SOCKET(-1)  ) {
 		m_ErrorCode = EModeSocketComm;
 		m_ErrorMsg  = "Cannot connect to data socket (is HCSM running?)";
 		return false;

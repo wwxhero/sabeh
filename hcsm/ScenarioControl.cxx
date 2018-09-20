@@ -4,7 +4,7 @@
 // Simulation Center, The University of Iowa and the University of Iowa.
 // All rights reserved.
 //
-// Version:		$Id: ScenarioControl.cxx,v 1.167 2016/10/28 20:48:54 IOWA\dheitbri Exp $
+// Version:		$Id: ScenarioControl.cxx,v 1.173 2018/09/07 14:34:42 IOWA\dheitbri Exp $
 // Author(s):   Yiannis Papelis
 // Date:        December, 2003
 //
@@ -19,13 +19,22 @@
 #include "LibExternalObjectIfNetwork.h"
 #include "CvedEDOCtrl.h"
 #include "CvedAdoCtrl.h"
+#include "SnoParserDistri.h"
 //#include "cvedstrc.h"
 #define _DIFF_DISTRI_SCENE
 #define _DIFF_DISTRI_SCENE_PREFIX "Distri_"
-
+#include "RendererInterface.h"
 #include "util.h"
 #define DEFAULT_ROAD_MARKING_WHEN_NO_TAGS
 
+#if defined(_DEBUG)
+#ifndef TRACE
+#define TRACE CVED::CCved::Logoutf
+#endif
+#else
+#undef TRACE
+#define TRACE __noop
+#endif
 
 #define M_PI       3.14159265358979323846
 #define M_PI_2     1.57079632679489661923
@@ -71,7 +80,7 @@ CScenarioControl::CScenarioControl()
 	m_blankColor[2] = 0;
 
 	m_scenarioHasBlanking = true;
-	m_ownshipHeadlightsOn = false;
+
 
 	ResetCollisionDetectionVars();
 
@@ -90,9 +99,9 @@ CScenarioControl::~CScenarioControl()
 {
 	if( m_pExternalObjCtrl )
 	{
-		m_pExternalObjCtrl->UnInitialize();
-		ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
-		m_pExternalObjCtrl = 0;
+        m_pExternalObjCtrl->UnInitialize();
+        ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
+        m_pExternalObjCtrl = 0;
 	}
 	delete m_pHdrBlk;
 }
@@ -154,13 +163,6 @@ CScenarioControl::GetCved( void )
 	return *m_pCved;
 }
 
-// CCvedDistri&
-// CScenarioControl::GetDistriCved(void)
-// {
-// 	assert( m_pCved );
-// 	return *dynamic_cast<CCvedDistri*>(m_pCved);
-// }
-
 CHcsmCollection&
 CScenarioControl::GetHcsm( void )
 {
@@ -182,6 +184,10 @@ CScenarioControl::ProcessFile(
 			bool testFileExistence
 			)
 {
+#ifdef WIN32
+#pragma warning( push )
+#pragma warning( disable : 4996 )
+#endif
     string envVar;
     NADS::GetEnvVar(envVar,cpEnvVarName);
 	if( envVar != "" )
@@ -226,6 +232,9 @@ CScenarioControl::ProcessFile(
 		fclose( pTest );
 	}
 
+#ifdef WIN32
+#pragma warning( pop )
+#endif
 	return true;
 }
 //////////////////////////////////////////////////////////////////////////////
@@ -508,36 +517,11 @@ CScenarioControl::SetCabType( const char* cabSOLName, const char* trailerSOLName
 //////////////////////////////////////////////////////////////////////////////bool
 bool
 CScenarioControl::GetOwnshipLights(
-			double& azimuth,
-			double& elevation,
-			double& beamWidth,
-			double& beamHeight,
-			double& constCoeff,
-			double& linearCoeff,
-			double& quadCoeff,
-			double& heightFade,
-			double& intensity,
-			double& cutOffDist,
-			double& lampSeparation,
-			double& lampForwardOffset
+CHcsmCollection::THeadlightSetting &setting
 			)
 {
-	if (m_ownshipHeadlightsOn) {
-		azimuth           = m_ownshipHeadlightsAzimuth;
-		elevation         = m_ownshipHeadlightsElevation;
-		beamWidth         = m_ownshipHeadlightsBeamWidth;
-		beamHeight        = m_ownshipHeadlightsBeamHeight;
-		constCoeff        = m_ownshipHeadlightsConstCoeff;
-		linearCoeff       = m_ownshipHeadlightsLinearCoeff;
-		quadCoeff         = m_ownshipHeadlightsQuadCoeff;
-		heightFade        = m_ownshipHeadlightsHeightFade;
-		intensity         = m_ownshipHeadlightsIntensity;
-		cutOffDist        = m_ownshipHeadlightsCutOffDist;
-		lampSeparation    = m_ownshipHeadlightsLampSeparation;
-		lampForwardOffset = m_ownshipHeadlightsLampForwardOffset;
-	}
-
-	return m_ownshipHeadlightsOn;
+    setting  = m_pRootColl->GetHeadLightSettings();
+    return setting.On;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -759,8 +743,39 @@ void CScenarioControl::FindPreCreateObjects(CSnoParser::TIterator pBlock,CSnoPar
 ///////////////////////////////////////////////////////////////////////////////
 ///\brief get a copy of every virtual block
 //////////////////////////////////////////////////////////////////////////////
-void CScenarioControl::GetVirtObjectsBlocks(const vector<CSnoBlock>* &pBlocks) {
-		pBlocks = &m_virtualObjects;
+void 
+CScenarioControl::GetVirtObjectsModels(CScenarioControl::TVirtModelList& ret) {
+    int iT;
+    ret.clear();
+    vector<CVirtualObjectParseBlock::TStatePoint> states;
+    typedef std::shared_ptr<CVirtualObjectModel> TRef; int i =0;
+    for (auto itr = m_virtualObjects.begin(); itr != m_virtualObjects.end(); ++itr, i++){
+        auto &block =*itr;
+        ret.push_back(TRef(new CVirtualObjectModel()));
+        ret[i];
+        auto size = block.GetDrawScale();
+        ret[i]->m_size[0] = (float)size.m_x;ret[i]->m_size[1] = (float)size.m_y;
+        block.GetAnnotation(ret[i]->m_id,iT);
+        ret[i]->m_angle = (float)block.GetOrientation();
+        auto pos =block.GetDrawPosition();
+        ret[i]->m_position[0] = (float)pos.m_x;
+        ret[i]->m_position[1] = (float)pos.m_y;
+        ret[i]->m_position[2] = (float)pos.m_z;
+        ret[i]->m_RenderType = block.GetType();
+        block.GetStateMatrix(states);
+        ret[i]->m_stateCount = (int)states.size();
+        for (int j = 0; j < ret[i]->m_stateCount; j++){
+            auto & state = ret[i]->m_states[j];
+            state.m_iconType = states[j].type;
+            state.m_stateIndex = states[j].group;
+            state.m_period = states[j].frameLength;
+            memcpy(state.m_boardercolor,states[j].colorBorder,sizeof(state.m_boardercolor));
+            memcpy(state.m_fillcolor,   states[j].colorFill,  sizeof(state.m_boardercolor));
+            memcpy(state.m_iconName,    states[j].IconName,   sizeof(state.m_iconName));
+            memcpy(state.m_scale,       states[j].scale,      sizeof(state.m_scale));
+        }
+        
+    }
 }
 ////////////////////////////////////////////////////////////////////////////////
 ///\brief get every sol Object:Color pair
@@ -839,6 +854,13 @@ void CScenarioControl::SetRehearsalChangeLaneLeftExternalDriver(){
 	driver->SetButtonByName("ChangeLaneLeft" );
 }
 
+void CScenarioControl::SetRehearsalExternalDriverButton(const std::string &str) {
+	auto driver = GetHcsm().GetExtDriverSurrogate();
+	if (!driver)
+		return;
+	driver->SetButtonByName(str);
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // Description:  The function loads configuration file of distributed system and
@@ -857,181 +879,282 @@ void CScenarioControl::SetRehearsalChangeLaneLeftExternalDriver(){
 
 bool CScenarioControl::InitDistriADOCtrlSim(const char* fullPath, bool simulateEdoCtrl)
 {
-	CSnoParserDistri parser;
+    CSnoParserDistri parser;
 #ifdef _DIFF_DISTRI_SCENE
-	const char c_deli = '\\';
-	const char* pThis = fullPath;
-	for (
-		; *pThis != '\0' && *pThis != c_deli
-		; pThis ++ );
-	if ('\0' == *pThis)
-		return false; //not right format of file path;
-	const char* pNext = pThis;
-	for (
-		; *pNext != '\0'
-		; pNext ++)
-	{
-		if (c_deli == *pNext)
-			pThis = pNext;
-	}
-	const char* pFile = pThis + 1;
-	std::string pathDir(fullPath, pThis - fullPath + 1);
-	std::string pathFile(_DIFF_DISTRI_SCENE_PREFIX);
-	pathFile += pFile;
-	std::string fullPathDistri = pathDir;
-	fullPathDistri += pathFile;
-	bool initialized = parser.ParseFile(fullPathDistri);
+    const char c_deli = '\\';
+    const char* pThis = fullPath;
+    for (
+        ; *pThis != '\0' && *pThis != c_deli
+        ; pThis++);
+    if ('\0' == *pThis)
+        return false; //not right format of file path;
+    const char* pNext = pThis;
+    for (
+        ; *pNext != '\0'
+        ; pNext++)
+    {
+        if (c_deli == *pNext)
+            pThis = pNext;
+    }
+    const char* pFile = pThis + 1;
+    std::string pathDir(fullPath, pThis - fullPath + 1);
+    std::string pathFile(_DIFF_DISTRI_SCENE_PREFIX);
+    pathFile += pFile;
+    std::string fullPathDistri = pathDir;
+    fullPathDistri += pathFile;
+    bool initialized = parser.ParseFile(fullPathDistri);
 #else
-	bool initialized = parser.Init();
+    bool initialized = parser.Init();
 #endif
-	if (initialized)
-	{
-		//
-		// Initialize a copy of CVED.  We find the lri name from the
-		// first scenario file block which should be a header.
-		//
-		CSnoParser::TIterator pBlock = parser.Begin();
-		bool scenFileError = (
-				pBlock == parser.End() ||
-				pBlock->GetBlockName() != string( "Header" )
-				);
-		if( scenFileError )
-		{
-			sprintf_s(
-				m_lastError,
-				sizeof(m_lastError),
-				"File is incomplete, or first block is not the header."
-				);
-			return !(m_haveError=true);
-		}
-		m_pHdrBlk = new CHeaderDistriParseBlock( *pBlock );
+    if (initialized)
+    {
+        //
+        // Initialize a copy of CVED.  We find the lri name from the
+        // first scenario file block which should be a header.
+        //
+        CSnoParser::TIterator pBlock = parser.Begin();
+        bool scenFileError = (
+            pBlock == parser.End() ||
+            pBlock->GetBlockName() != string("Header")
+            );
+        if (scenFileError)
+        {
+            sprintf_s(
+                m_lastError,
+                sizeof(m_lastError),
+                "File is incomplete, or first block is not the header."
+            );
+            return !(m_haveError = true);
+        }
+        m_pHdrBlk = new CHeaderDistriParseBlock(*pBlock);
 
-		if( m_pExternalObjCtrl ) ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
-		if( m_pCved ) delete m_pCved;
+        if (m_pExternalObjCtrl) ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
+        if (m_pCved) delete m_pCved;
 
-		if (simulateEdoCtrl)
-		{
-			m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK, edo_controller);
-			m_pCved = new CCvedEDOCtrl(m_pExternalObjCtrl);
-		}
-		else
-		{
-			m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK, ado_controller);
-			m_pCved = new CCvedADOCtrl(m_pExternalObjCtrl);
-		}
-		m_pCved->Configure( CCved::eCV_SINGLE_USER, m_behavDeltaT, m_dynaMult );
-		string cvedErr;
-		initialized = m_pCved->Init( m_pHdrBlk->GetLriFile(), cvedErr );
-		if( !initialized )
-		{
-			sprintf_s( m_lastError, sizeof(m_lastError),"Cved::Init failed: %s", cvedErr.c_str() );
-		}
-		else
-			initialized = m_pExternalObjCtrl->Initialize(static_cast<CHeaderDistriParseBlock&>(*m_pHdrBlk), static_cast<CVED::CCvedDistri*>(m_pCved)) //the configuration for localhost simulator will be identified
-						&& InitSimulation(parser, simulateEdoCtrl);
-	}
+        if (simulateEdoCtrl)
+        {
+            m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK, edo_controller);
+            m_pCved = new CCvedEDOCtrl(m_pExternalObjCtrl);
+        }
+        else
+        {
+            m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK, ado_controller);
+            m_pCved = new CCvedADOCtrl(m_pExternalObjCtrl);
+        }
+        m_pCved->Configure(CCved::eCV_SINGLE_USER, m_behavDeltaT, m_dynaMult);
+        string cvedErr;
+        initialized = m_pCved->Init(m_pHdrBlk->GetLriFile(), cvedErr);
+        if (!initialized)
+        {
+            sprintf_s(m_lastError, sizeof(m_lastError), "Cved::Init failed: %s", cvedErr.c_str());
+        }
+        else
+            initialized = m_pExternalObjCtrl->Initialize(static_cast<CHeaderDistriParseBlock&>(*m_pHdrBlk), static_cast<CVED::CCvedDistri*>(m_pCved)) //the configuration for localhost simulator will be identified
+            && InitSimulation(parser, simulateEdoCtrl);
+    }
 
-	if (!initialized)
-	{
-		ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
-		m_pExternalObjCtrl = NULL;
-	}
+    if (!initialized)
+    {
+        ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
+        m_pExternalObjCtrl = NULL;
+    }
 
-	return initialized;
+    return initialized;
 }
 
 bool CScenarioControl::InitDistriEDOCtrlSim(const char* filePath, bool simulateOwnVeh)
 {
-	//
-	// Create a scenario name and perform translation.
-	//
+    //
+    // Create a scenario name and perform translation.
+    //
 #ifdef _DIFF_DISTRI_SCENE
-	m_scnFileName = _DIFF_DISTRI_SCENE_PREFIX;
-	m_scnFileName += filePath;
+    m_scnFileName = _DIFF_DISTRI_SCENE_PREFIX;
+    m_scnFileName += filePath;
 #else
-	m_scnFileName = filePath;
+    m_scnFileName = filePath;
 #endif
-	bool fileOk = ProcessFile(
-						m_scnFileName,
-						"NADSSDC_SCN",
-						m_scnFileNameFull,
-						true
-						);
-	if( !fileOk )  return false;
+    bool fileOk = ProcessFile(
+        m_scnFileName,
+        "NADSSDC_SCN",
+        m_scnFileNameFull,
+        true
+    );
+    if (!fileOk)  return false;
 
-	//
-	// parse the file using the sno parser
-	//
-	CSnoParserDistri parser;
-	bool		  initialized = true;
-	try
-	{
-		initialized = parser.ParseFile( m_scnFileNameFull.c_str() );
-	}
-	catch( CSnoParser::TError e )
-	{
-		sprintf_s(
-			m_lastError,
+    //
+    // parse the file using the sno parser
+    //
+    CSnoParserDistri parser;
+    bool		  initialized = true;
+    try
+    {
+        initialized = parser.ParseFile(m_scnFileNameFull.c_str());
+    }
+    catch (CSnoParser::TError e)
+    {
+        sprintf_s(
+            m_lastError,
             sizeof(m_lastError),
-			"Parser failed with error %s",
-			e.msg.c_str()
-			);
-		initialized = false;
-	}
-	catch( ... )
-	{
-		sprintf_s( m_lastError, sizeof(m_lastError), "Parser failed with unknown error" );
-		initialized = false;
-	}
+            "Parser failed with error %s",
+            e.msg.c_str()
+        );
+        initialized = false;
+    }
+    catch (...)
+    {
+        sprintf_s(m_lastError, sizeof(m_lastError), "Parser failed with unknown error");
+        initialized = false;
+    }
 
-	if (initialized)
-	{
-		//
-		// Initialize a copy of CVED.  We find the lri name from the
-		// first scenario file block which should be a header.
-		//
-		CSnoParser::TIterator pBlock = parser.Begin();
-		bool scenFileError = (
-				pBlock == parser.End() ||
-				pBlock->GetBlockName() != string( "Header" )
-				);
-		if( scenFileError )
-		{
-			sprintf_s(
-				m_lastError,
-				sizeof(m_lastError),
-				"File is incomplete, or first block is not the header."
-				);
-			return !(m_haveError=true);
-		}
-		m_pHdrBlk = new CHeaderDistriParseBlock( *pBlock );
+    if (initialized)
+    {
+        //
+        // Initialize a copy of CVED.  We find the lri name from the
+        // first scenario file block which should be a header.
+        //
+        CSnoParser::TIterator pBlock = parser.Begin();
+        bool scenFileError = (
+            pBlock == parser.End() ||
+            pBlock->GetBlockName() != string("Header")
+            );
+        if (scenFileError)
+        {
+            sprintf_s(
+                m_lastError,
+                sizeof(m_lastError),
+                "File is incomplete, or first block is not the header."
+            );
+            return !(m_haveError = true);
+        }
+        m_pHdrBlk = new CHeaderDistriParseBlock(*pBlock);
 
-		if( m_pExternalObjCtrl ) ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
-		m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK, edo_controller);
+        if (m_pExternalObjCtrl) ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
+        m_pExternalObjCtrl = CreateNetworkExternalObjectControl(DISVRLINK, edo_controller);
 
-		if( m_pCved ) delete m_pCved;
-		m_pCved = new CCvedEDOCtrl(m_pExternalObjCtrl);
-		m_pCved->Configure( CCved::eCV_SINGLE_USER, m_behavDeltaT, m_dynaMult );
-		string cvedErr;
-		initialized = m_pCved->Init( m_pHdrBlk->GetLriFile(), cvedErr );
-		if( !initialized )
-		{
-			sprintf_s( m_lastError, sizeof(m_lastError),"Cved::Init failed: %s", cvedErr.c_str() );
-		}
-		else
-			initialized = m_pExternalObjCtrl->Initialize(static_cast<CHeaderDistriParseBlock&>(*m_pHdrBlk), static_cast<CVED::CCvedDistri*>(m_pCved)) //the configuration for localhost simulator will be identified
-						&& InitSimulation(parser, simulateOwnVeh);
-	}
+        if (m_pCved) delete m_pCved;
+        m_pCved = new CCvedEDOCtrl(m_pExternalObjCtrl);
+        m_pCved->Configure(CCved::eCV_SINGLE_USER, m_behavDeltaT, m_dynaMult);
+        string cvedErr;
+        initialized = m_pCved->Init(m_pHdrBlk->GetLriFile(), cvedErr);
+        if (!initialized)
+        {
+            sprintf_s(m_lastError, sizeof(m_lastError), "Cved::Init failed: %s", cvedErr.c_str());
+        }
+        else
+            initialized = m_pExternalObjCtrl->Initialize(static_cast<CHeaderDistriParseBlock&>(*m_pHdrBlk), static_cast<CVED::CCvedDistri*>(m_pCved)) //the configuration for localhost simulator will be identified
+            && InitSimulation(parser, simulateOwnVeh);
+    }
 
-	if (!initialized)
-	{
-		ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
-		m_pExternalObjCtrl = NULL;
-	}
+    if (!initialized)
+    {
+        ReleaseNetworkExternalObjectControl(m_pExternalObjCtrl);
+        m_pExternalObjCtrl = NULL;
+    }
 
-	return initialized;
+    return initialized;
 
 }
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Description:  The function loads the specified scenario file and
+//  initializes all necessary data structures so it can execute the 
+//  scenario.
+//
+// Remarks:
+//
+// Arguments:
+//  cpScenarioFileName - The scenario file's name.
+//  simulateOwnVeh - Should the behaviors simulate a fake ownvehicle?
+//  isFile - (optional)
+//
+// Returns:  A boolean to indicate if everything initialize okay.  Use the
+//  GetLastErrorString() function to get the error message.
+//
+//////////////////////////////////////////////////////////////////////////////
+
+bool
+CScenarioControl::InitSimulation(
+		const char* cpScenarioFileName,
+		bool        simulateOwnVeh,
+		bool		isFile
+		){
+    //
+    // Create a scenario name and perform translation.
+    //
+    m_scnFileName = cpScenarioFileName;
+    bool fileOk = ProcessFile(
+        m_scnFileName,
+        "NADSSDC_SCN",
+        m_scnFileNameFull,
+        isFile
+    );
+    if (!fileOk)  return false;
+
+    //
+    // parse the file using the sno parser
+    //
+    CSnoParser    parser;
+    bool		  parseWorked = true;
+    try
+    {
+        if (isFile)
+            parser.ParseFile(m_scnFileNameFull.c_str());
+        else
+            parser.Parse(cpScenarioFileName);
+    }
+    catch (CSnoParser::TError e)
+    {
+        sprintf_s(
+            m_lastError,
+            sizeof(m_lastError),
+            "Parser failed with error %s",
+            e.msg.c_str()
+        );
+        parseWorked = false;
+    }
+    catch (...)
+    {
+        sprintf_s(m_lastError, sizeof(m_lastError), "Parser failed with unknown error");
+        parseWorked = false;
+    }
+
+    //
+    // Initialize a copy of CVED.  We find the lri name from the
+    // first scenario file block which should be a header.
+    //
+    CSnoParser::TIterator pBlock = parser.Begin();
+    bool scenFileError = (
+        pBlock == parser.End() ||
+        pBlock->GetBlockName() != string("Header")
+        );
+    if (scenFileError)
+    {
+        sprintf_s(
+            m_lastError,
+            sizeof(m_lastError),
+            "File is incomplete, or first block is not the header."
+        );
+        return !(m_haveError = true);
+    }
+
+    m_pHdrBlk = new CHeaderParseBlock(*pBlock);
+
+    if (m_pCved) delete m_pCved;
+    m_pCved = new CCved();
+    m_pCved->Configure(CCved::eCV_SINGLE_USER, m_behavDeltaT, m_dynaMult);
+    string cvedErr;
+    bool success = m_pCved->Init(m_pHdrBlk->GetLriFile(), cvedErr);
+    if (!success)
+    {
+        sprintf_s(m_lastError, sizeof(m_lastError), "Cved::Init failed: %s", cvedErr.c_str());
+        return !(m_haveError = true);
+    }
+
+    return parseWorked
+        && InitSimulation(parser, simulateOwnVeh);
+}
+
 
 bool CScenarioControl::InitSimulation( CSnoParser& parser, bool simulateOwnVeh )
 {
@@ -1179,47 +1302,7 @@ bool CScenarioControl::InitSimulation( CSnoParser& parser, bool simulateOwnVeh )
 	//
 	m_showCab = m_pHdrBlk->GetShowCab();
 
-	//
-	// Set the Ownship Light information
-	//
-	m_ownshipHeadlightsOn                = m_pHdrBlk->GetHeadlightsOn();
-	m_ownshipHeadlightsAzimuth           = m_pHdrBlk->GetHeadlightsAzimuth();
-	m_ownshipHeadlightsElevation         = m_pHdrBlk->GetHeadlightsElevation();
-	m_ownshipHeadlightsBeamWidth         = m_pHdrBlk->GetHeadlightsBeamWidth();
-	m_ownshipHeadlightsBeamHeight        = m_pHdrBlk->GetHeadlightsBeamHeight();
-	m_ownshipHeadlightsConstCoeff        = m_pHdrBlk->GetHeadlightsConstCoeff();
-	m_ownshipHeadlightsLinearCoeff       = m_pHdrBlk->GetHeadlightsLinearCoeff();
-	m_ownshipHeadlightsQuadCoeff         = m_pHdrBlk->GetHeadlightsQuadCoeff();
-	m_ownshipHeadlightsHeightFade        = m_pHdrBlk->GetHeadlightsHeightFade();
-	m_ownshipHeadlightsIntensity         = m_pHdrBlk->GetHeadlightsIntensity();
-	m_ownshipHeadlightsCutOffDist        = m_pHdrBlk->GetHeadlightsCutOffDist();
-	m_ownshipHeadlightsLampSeparation    =m_pHdrBlk->GetHeadlightLampSeparation();
-	m_ownshipHeadlightsLampForwardOffset=m_pHdrBlk->GetHeadlightForwardOffset();
-	//
-	// Set date and time information
-	//
-	m_year = (short)m_pHdrBlk->GetEnvYear();
-	m_month = (short)m_pHdrBlk->GetEnvMonth();
-	m_day = (short)m_pHdrBlk->GetEnvDay();
-	m_hour = (short)m_pHdrBlk->GetEnvHour();
-	m_minute = (short)m_pHdrBlk->GetEnvMinute();
 
-	//
-	//
-	// Set terrain coordinate information
-	m_longitude = (float)m_pHdrBlk->GetEnvLong();
-	m_latitude = (float)m_pHdrBlk->GetEnvLat();
-	m_altitude = (float)m_pHdrBlk->GetEnvAlt();
-
-	//
-	//
-	// Set sky model values
-	m_sunEntityEnabled = true;
-	m_sunlightEnabled = true;
-	m_moonEntityEnabled = true;
-	m_moonlightEnabled = true;
-	m_sunlightIntensity = 100.0;
-	m_moonlightIntensity = (float)m_pHdrBlk->GetAmbientLightInt();
 
 	CHcsmCollection::m_sHeadlightScenarioControl = 0;
 	//
@@ -1227,8 +1310,7 @@ bool CScenarioControl::InitSimulation( CSnoParser& parser, bool simulateOwnVeh )
 	// represent the ExternalDriver in this scenario.
 	//
 	ostrstream o;
-	o << parser;
-	TRACE(TEXT("Before adding blk:%s\n"), o.str());
+
 	if( simulateOwnVeh && m_pHdrBlk->HasOwnVeh() )
 	{
 		CAdoParseBlock block;
@@ -1341,105 +1423,6 @@ bool CScenarioControl::InitSimulation( CSnoParser& parser, bool simulateOwnVeh )
 	CHcsmCollection::ClearVariables();
 
 	return !(m_haveError=false);
-}
-//////////////////////////////////////////////////////////////////////////////
-//
-// Description:  The function loads the specified scenario file and
-//  initializes all necessary data structures so it can execute the
-//  scenario.
-//
-// Remarks:
-//
-// Arguments:
-//  cpScenarioFileName - The scenario file's name.
-//  simulateOwnVeh - Should the behaviors simulate a fake ownvehicle?
-//  isFile - (optional)
-//
-// Returns:  A boolean to indicate if everything initialize okay.  Use the
-//  GetLastErrorString() function to get the error message.
-//
-//////////////////////////////////////////////////////////////////////////////
-bool
-CScenarioControl::InitSimulation(
-		const char* cpScenarioFileName,
-		bool        simulateOwnVeh,
-		bool		isFile
-		)
-{
-	//
-	// Create a scenario name and perform translation.
-	//
-	m_scnFileName = cpScenarioFileName;
-	bool fileOk = ProcessFile(
-						m_scnFileName,
-						"NADSSDC_SCN",
-						m_scnFileNameFull,
-						isFile
-						);
-	if( !fileOk )  return false;
-
-	//
-	// parse the file using the sno parser
-	//
-	CSnoParser    parser;
-	bool		  parseWorked = true;
-	try
-	{
-		if( isFile )
-			parser.ParseFile( m_scnFileNameFull.c_str() );
-		else
-			parser.Parse( cpScenarioFileName );
-	}
-	catch( CSnoParser::TError e )
-	{
-		sprintf_s(
-			m_lastError,
-            sizeof(m_lastError),
-			"Parser failed with error %s",
-			e.msg.c_str()
-			);
-		parseWorked = false;
-	}
-	catch( ... )
-	{
-		sprintf_s( m_lastError, sizeof(m_lastError), "Parser failed with unknown error" );
-		parseWorked = false;
-	}
-
-	//
-	// Initialize a copy of CVED.  We find the lri name from the
-	// first scenario file block which should be a header.
-	//
-	CSnoParser::TIterator pBlock = parser.Begin();
-	bool scenFileError = (
-				pBlock == parser.End() ||
-				pBlock->GetBlockName() != string( "Header" )
-				);
-	if( scenFileError )
-	{
-		sprintf_s(
-			m_lastError,
-            sizeof(m_lastError),
-			"File is incomplete, or first block is not the header."
-			);
-		return !(m_haveError=true);
-	}
-
-	m_pHdrBlk = new CHeaderParseBlock( *pBlock );
-
-	if( m_pCved ) delete m_pCved;
-	m_pCved = new CCved();
-	m_pCved->Configure( CCved::eCV_SINGLE_USER, m_behavDeltaT, m_dynaMult );
-	string cvedErr;
-	bool success = m_pCved->Init( m_pHdrBlk->GetLriFile(), cvedErr );
-	if( !success )
-	{
-		sprintf_s( m_lastError, sizeof(m_lastError),"Cved::Init failed: %s", cvedErr.c_str() );
-		return !(m_haveError=true);
-	}
-
-	return parseWorked
-		&& InitSimulation(parser, simulateOwnVeh);
 }
 
 
@@ -2599,7 +2582,7 @@ CScenarioControl::ComputeStatObjData( const CPoint3D& cOwnVehCartPos, bool onlyO
 	CObjTypeMask mask;
 	mask.SetAll();
 	m_pCved->GetChangedStaticObjsNear(cOwnVehCartPos,10000,5,objItr);
-	CHcsmCollection::m_sChangedStatObjDataSize = min(objItr.size(),size_t(cMAX_CHANGED_STAT_OBJ));
+	CHcsmCollection::m_sChangedStatObjDataSize = (short)min(objItr.size(),size_t(cMAX_CHANGED_STAT_OBJ));
 	int option = -1;
 	for (int i = 0; i < CHcsmCollection::m_sChangedStatObjDataSize; i++){
 		if (m_pCved->GetObjOption(objItr[i],option)){
@@ -3661,7 +3644,6 @@ CScenarioControl::ComputeOwnVehInfo( const CPoint3D& cOwnVehCartPos )
 	int leftmarking, rightmarking, rightAtrib, leftAtrib;
     //calcuate a forward vector for an overhead view
     if (CHcsmCollection::m_sIsOnPath){
-        float collectiveWeights;
         //we are going to do a 7 point sample of the tangents
         // 2 4 8 4 2
         CVector3D pos = m_ownVehRoadPos.GetTangentInterpolated(true)*6.0;
@@ -3722,4 +3704,12 @@ CScenarioControl::ComputeOwnVehInfo( const CPoint3D& cOwnVehCartPos )
 const string&
 CScenarioControl::GetLriName(){
    return m_lriName;
+}
+/////////////////////////////////////////////////////////////////////////////////////////
+///\brief
+///   Gets a snoparse block
+///
+////////////////////////////////////////////////////////////////////////////////////////
+CScenarioControl::TVirtObjSet CScenarioControl::GetVirtObjModels(){
+    return m_virtualObjects;
 }

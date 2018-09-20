@@ -3,7 +3,7 @@
 // (C) Copyright 1998 by NADS & Simulation Center, The University of
 //     Iowa.  All rights reserved.
 //
-// Version:     $Id: action.h,v 1.41 2016/05/05 22:13:33 IOWA\dheitbri Exp $
+// Version:     $Id: action.h,v 1.43 2017/08/16 20:21:04 IOWA\dheitbri Exp $
 // Author(s):   Jillian Vogel
 // Date:        June, 1999
 //
@@ -103,5 +103,7 @@ void GetActions(
 #include "AttachShaderActn.h"
 #include "SetSwitchActn.h"
 #include "UpdateTODActn.h"
+#include "SpotlightAction.h"
+#include "SetEnvCondition.h"
 #endif	// _ACTION_H_
 

@@ -4,7 +4,7 @@
  * Simulation Center, the University of Iowa and The University
  * of Iowa. All rights reserved.
  *
- * Version:      $Id: parse.c,v 1.8 2013/11/27 00:05:03 iowa\dheitbri Exp $
+ * Version:      $Id: parse.c,v 1.10 2018/07/16 15:42:32 IOWA\dheitbri Exp $
  *
  * Author:       Yiannis Papelis
  * Changes:      Omar Ahmad, Ben Wehrle
@@ -1946,7 +1946,7 @@ static void ExtractPathFromFileName(
 	pFileName = strrchr( pFileNameWithPath, '/' );
 	if ( pFileName ) {
 
-		int numCharsToCopy = strlen( pFileNameWithPath ) - strlen( pFileName );
+		size_t numCharsToCopy = strlen( pFileNameWithPath ) - strlen( pFileName );
 
 		/* copy the final '\' also */
 		numCharsToCopy++;
@@ -2156,9 +2156,9 @@ main( int argc, char **argv )
 	 * Open source file, get a temporary filename and then copy the original
 	 * file to the temporary file after applying the ExtFile directives.
 	 */
-	strcpy(pTempName, getenv("TMP"));
-	strcat(pTempName, "\\");
-	strcat(pTempName, tmpnam( NULL ));
+	//strcpy(pTempName, getenv("TMP"));
+	//strcat(pTempName, "\\");
+    strcpy(pTempName, tmpnam( NULL ));
 
 	
 	
