@@ -415,7 +415,7 @@ CGraphicsStateAdapter::UpdateDynamicObjects(){
 	m_pScen->GetObjectState( currList, m_state, currCount );
 	for( i = 0; i < currCount; i++ ) {
 		cvedId = currList[i];
-		bool notOwnVeh = strcmp( cved.GetObjName(cvedId), "Driver" )>0;
+		bool notOwnVeh = strcmp( cved.GetObjName(cvedId), "Driver" )!=0;
 		if( notOwnVeh ) {
 			uniqueId = cvedId;
 			double posori[6]; 
